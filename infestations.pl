@@ -42,7 +42,7 @@ treatment(scale_insects, 'spray with neem oil and insecticidal soap').
 treatment(scale_insects, 'dab individual scales with alcohol').
 
 % white_flies
-type(white_flies) :- symptom(leaves, white_flies), symptom(leaves, altered_color, chlorosis).
+type(white_flies) :- symptom(leaves, white_flies), symptom(leaves, altered_color, chlorotic).
 type(white_flies) :- symptom(leaves, white_flies), symptom(leaves, dry).
 treatment(white_flies, 'apply sticky traps').
 treatment(white_flies, 'spray with neem oil and insecticidal soap').
@@ -54,7 +54,7 @@ treatment(cutworms, 'Create barriers with cardboard collars or gritty substances
 treatment(cutworms, 'encourage birds to visit the garden').
 
 % fungus_gnats
-type(fungus_gnats) :- symptom(all, small_black_flies).
+type(fungus_gnats) :- symptom(all, small_flies, black).
 treatment(fungus_gnats, 'keep the soil less moist until they leave').
 treatment(fungus_gnats, 'use the bottom watering method').
 treatment(fungus_gnats, 'mix the nematodes with water and water directly').
@@ -62,9 +62,9 @@ treatment(fungus_gnats, 'mix the nematodes with water and water directly').
 % mealy_bugs
 type(mealy_bugs) :- symptom(all, stunted_growth).
 type(mealy_bugs) :- symptom(all, withering).
-type(mealy_bugs) :- symptom(leaves, altered_color, chlorosis).
+type(mealy_bugs) :- symptom(leaves, altered_color, chlorotic).
 type(mealy_bugs) :- symptom(lower_side_leaves, clustering_cottony).
-type(mealy_bugs) :- symptom(leaves, altered_color, chlorosis), symptom(leaves, early_fall).
+type(mealy_bugs) :- symptom(leaves, altered_color, chlorotic), symptom(leaves, early_fall).
 type(mealy_bugs) :- symptom(all, dry).
 type(mealy_bugs) :- symptom(all, sticky_honeydew).
 treatment(mealy_bugs, 'poke them off shaking the plant').

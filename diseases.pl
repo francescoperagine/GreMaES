@@ -18,7 +18,7 @@ class(disease, verticilium_wilt).
 % treatment/1
 
 % black_spot
-type(black_spot) :- symptom(leaves, chlorosis), symptom(leaves, early_fall).
+type(black_spot) :- symptom(leaves, chlorotic), symptom(leaves, early_fall).
 type(black_spot) :- symptom(upper_side_leaves, spots, black).
 treatment(black_spot, 'plant in well-draining soil. Provide regular feedings of organic fertilizer. Remove dead leaves and infected canes and do not add them to the compost pile. Avoid applying water on the leaves, as it spreads the fungal spores.').
 
@@ -41,13 +41,13 @@ treatment(powdery_mildew, 'trim and remove infected parts. Do not till the debri
 % downy_mildew
 type(downy_mildew) :- symptom(upper_side_lower_leaves, spots, pale_green).
 type(downy_mildew) :- symptom(upper_side_lower_leaves, spots, yellow).
-type(downy_mildew) :- symptom(lower_side_leaves, cotton_like_downy_substance, white).
-type(downy_mildew) :- symptom(lower_side_leaves, cotton_like_downy_substance, greysh).
+type(downy_mildew) :- symptom(lower_side_leaves, white_cotton_like_downy_substance).
+type(downy_mildew) :- symptom(lower_side_leaves, greysh_cotton_like_downy_substance).
 type(downy_mildew) :- symptom(lower_side_leaves, grayish_fuzzy_looking_spores).
 treatment(downy_mildew, 'keep water off leaves as much as possible, as downy mildew need water to survive and spread. Be sure to clean around the plants in the fall to help prevent the disease').
 
 % blight
-type(blight) :- symptom(leaves, altered_color, chlorosis).
+type(blight) :- symptom(leaves, altered_color, chlorotic).
 type(blight) :- symptom(all, spot).
 type(blight) :- symptom(all, withering).
 type(blight) :- symptom(all, death_of_plant_tissue).
@@ -60,8 +60,12 @@ treatment(canker, 'remove diseased parts in dry weather').
 treatment(canker, 'avoid overwatering and overcrowding').
 
 % shot_hole
-type(shot_hole) :- symptom(leaves, spots, tan), symptom(leaves, spots_drop_out), symptom(leaves, shot_holes).
-type(shot_hole) :- symptom(leaves, spots, purplish), symptom(leaves, spots_drop_out), symptom(leaves, shot_holes).
+type(shot_hole) :- symptom(leaves, spots, tan).
+type(shot_hole) :- symptom(leaves, spots_drop_out).
+type(shot_hole) :- symptom(leaves, shot_holes).
+type(shot_hole) :- symptom(leaves, spots, purplish).
+type(shot_hole) :- symptom(leaves, spots_drop_out).
+type(shot_hole) :- symptom(leaves, shot_holes).
 type(shot_hole) :- symptom(fruits, spots, red).
 type(shot_hole) :- symptom(fruits, spots, red), symptom(fruits, clear_gummy_substance).
 type(shot_hole) :- symptom(fruits, spots, purplish).
@@ -72,7 +76,9 @@ treatment(shot_hole, 'destroy fallen leaves, spray with copper spray').
 type(early_blight) :- symptom(leaves, spots, dark_brown). 
 type(early_blight) :- symptom(leaves, spots, black). 
 type(early_blight) :- symptom(stem, spots, black). 
-type(early_blight) :- symptom(fruits, sunken_spot, black), symptom(fruits, leathery_spot, black), symptom(fruits, large_spots, black).
+type(early_blight) :- symptom(fruits, sunken_spot, black).
+type(early_blight) :- symptom(fruits, leathery_spot, black).
+type(early_blight) :- symptom(fruits, large_spots, black).
 treatment(early_blight, 'Space and prune plants for good air curculation. Avoid overhead watering. Destroy infected leaves').
 
 % late_blight
@@ -87,14 +93,14 @@ type(late_blight) :-
 treatment(late_blight, 'remove diseased leaves or entire plants immediately, seal in a plastic bag and send to the landfill. Do not compost late blight infected plants. Apply a copper spray at every 5 to 10 days till allowed days before harvest').
 
 % grey_mold
-type(grey_mold) :- symptom(all, grey_fuzzy_mold).
+type(grey_mold) :- symptom(all, fuzzy_mold, grey).
 type(grey_mold) :- symptom(stem, water_soaked_spots).
 type(grey_mold) :- symptom(flower, water_soaked_spots).
 type(grey_mold) :- symptom(lower_leaves, water_soaked_spots).
 treatment(grey_mold, 'Thoroughly clean and discard garden debris and refuse in the fall to reduce the level of grey mold in your garden. Susceptible plants (that are sun loving) should be grown in sunny areas with good air circulation. If practical water at the base of plants not over the foliage. If botrytis appears, remove infected leaves and fruit.').
 
 % verticilium_wilt
-type(verticilium_wilt) :- symptom(branches, altered_color, chlorosis).
+type(verticilium_wilt) :- symptom(branches, altered_color, chlorotic).
 type(verticilium_wilt) :- symptom(branches, wilting).
 type(verticilium_wilt) :- symptom(branches, dying).
 treatment(verticilium_wilt, 'Remove dead and dying plants including the infested roots and the soil and replant with tolerant or resistant species. When pruning trees that may have this disease, sterilize your pruning tools between trees to prevent spreading it to an and noninfected tree').

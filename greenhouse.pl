@@ -1,114 +1,121 @@
 % health_problem/1
-health_problem(biotic_problem).
 health_problem(abiotic_problem).
+health_problem(biotic_problem).
 
-% section/1
-section(all).
-section(branches).
-section(shoot).
-section(leaves).
-section(lower_leaves).
-section(upper_leaves).
-section(upper_side_leaves).
-section(lower_side_leaves).
-section(upper_side_lower_leaves).
-section(roots).
-section(stem).
-section(buds).
-section(fruits).
-section(bark).
+% manifest_section/2
+manifest_section(altered_color, all).
+manifest_section(altered_color, branches).
+manifest_section(altered_color, leaves).
+manifest_section(altered_color, lower_leaves).
+manifest_section(altered_color, roots).
+manifest_section(altered_color, upper_leaves).
+manifest_section(angular_lesions, leaves).
+manifest_section(black_leathery_spot, fruits).
+manifest_section(black_sunken_spot, fruits).
+manifest_section(circular_lesions, leaves).
+manifest_section(clear_gummy_substance, fruits).
+manifest_section(clustering_cottony, lower_side_leaves).
+manifest_section(cotton_like_downy_substance, lower_side_leaves).
+manifest_section(cutworms_under_debris, all).
+manifest_section(cutworms_under_leaves, leaves).
+manifest_section(dead_patches, bark).
+manifest_section(death_of_growing_point, shoot).
+manifest_section(death_of_plant_tissue, all).
+manifest_section(deformed, all).
+manifest_section(deformed, buds).
+manifest_section(deformed, leaves).
+manifest_section(delayed_growth, all).
+manifest_section(dry, all).
+manifest_section(dry, leaves).
+manifest_section(dying, branches).
+manifest_section(early_fall, leaves).
+manifest_section(excessive_tillering_growth, all).
+manifest_section(fail_to_form, buds).
+manifest_section(flies, leaves).
+manifest_section(fuzzy_looking_spores, lower_side_leaves).
+manifest_section(highly_branched_growth, roots).
+manifest_section(husks, soil).
+manifest_section(increased_growth, roots).
+manifest_section(irregular_lesions, leaves).
+manifest_section(irregular_water_soaked_blotches, fruits).
+manifest_section(irregular_water_soaked_blotches, lower_leaves).
+manifest_section(irregular_water_soaked_blotches, stem).
+manifest_section(large_spots, fruits).
+manifest_section(mottled, leaves).
+manifest_section(necrotic_lesions, leaves).
+manifest_section(parachute_shape, leaves).
+manifest_section(poor_quality, fruits).
+manifest_section(poor_quantity, fruits).
+manifest_section(poor_quantity, leaves).
+manifest_section(shot_holes, leaves).
+manifest_section(small_flies, all).
+manifest_section(small_holes, leaves).
+manifest_section(small_size, leaves).
+manifest_section(smell_strange, root).
+manifest_section(spots_drop_out, leaves).
+manifest_section(spots, fruits).
+manifest_section(spots, leaves).
+manifest_section(spots, stem).
+manifest_section(spots, upper_side_lower_leaves).
+manifest_section(sticky_honeydew, all).
+manifest_section(sticky_webbing, all).
+manifest_section(streaking, leaves).
+manifest_section(stunted_growth, all).
+manifest_section(stunted_growth, leaves).
+manifest_section(stunted_growth, shoot).
+manifest_section(stunted_growth, stem).
+manifest_section(stunted_growth, upper_leaves).
+manifest_section(thin_size, leaves).
+manifest_section(visible_spores, leaves).
+manifest_section(water_soaked_spots, flower).
+manifest_section(water_soaked_spots, lower_leaves).
+manifest_section(water_soaked_spots, stem).
+manifest_section(white_powdery_substance, all).
+manifest_section(wilting_margins, leaves).
+manifest_section(withering, all).
+manifest_section(withering, leaves).
 
-% appearance/1
-appearance(altered_color, [lower_leaves, leaves, upper_leaves, all, roots, branches]).
-appearance(deformed, [leaves, all, buds]).
-appearance(angular_lesions, [leaves]).
-appearance(circular_lesions, [leaves]).
-appearance(irregular_lesions, [leaves]).
-appearance(necrotic_lesions, [leaves]).
-appearance(mottled, [leaves]).
-appearance(streaking, [leaves]).
-
-appearance(parachute, [leaves]).
-appearance(thin_size, [leaves]).
-appearance(small_size, [leaves]).
-appearance(large_spots, [leaves, fruits]).
-
-appearance(poor_quality, [fruits]).
-appearance(poor_quantity, [leaves, fruits]).
-appearance(visible_spores, [leaves]).
-
-appearance(small_holes, [leaves]).
-appearance(spots, [leaves, upper_side_lower_leaves, fruits, stem]).
-appearance(shot_holes, [leaves]).
-appearance(sunken_spot, [fruits]).
-appearance(leathery_spot, [fruits]).
-appearance(dead_patches, [bark]).
-
-
-appearance(white_powdery_substance, [all]).
-appearance(cotton_like_downy_substance, [lower_side_leaves]).
-appearance(grayish_fuzzy_looking_spores, [lower_side_leaves]).
-appearance(water_soaked_spots, [stem, flower, lower_leaves]).
-appearance(clear_gummy_substance, [fruits]).
-appearance(irregular_water_soaked_blotches, [lower_leaves, stem, fruits]).
-appearance(dying, [branches]).
-appearance(sticky_honeydew, [all]).
-appearance(husks, [soil]).
-
-appearance(sticky_webbing, [all]).
-appearance(white_flies, [leaves]).
-appearance(dry, [all, leaves]).
-appearance(cutworms_under_leaves, [leaves]).
-appearance(cutworms_under_debris, [all]).
-appearance(small_black_flies, [all]).
-appearance(clustering_cottony, [lower_side_leaves]).
-
-% color/1
-color(angular_chlorosis).
-color(blotchy_chlorosis).
-color(interveinal_chlorosis).
-color(rounded_chlorosis).
-color(spots_chlorosis).
-color(chlorosis).
-color(random_chlorosis).
-
-color(bronze).
-color(brown).
-color(brown_discoloration).
-color(black).
-color(chlorotic).
-color(dark_green).
-color(dark_brown).
-color(dark_margin).
-color(dark_veins).
-color(greysh).
-color(greenish_black).
-color(necrotic).
-color(pale_green).
-color(reddish_purple).
-color(red).
-color(purplish).
-color(tan).
-color(white).
-color(whitish_yellow).
-color(yellowish_outline).
-
-% behaviour/1
-behaviour(early_fall, [leaves]).
-behaviour(death_of_growing_point, [shoot]).
-behaviour(death_of_plant_tissue, [all]).
-behaviour(fail_to_form, [buds]).
-behaviour(wilting_margins, [leaves]).
-behaviour(withering, [leaves, all]).
-behaviour(spots_drop_out, [leaves]).
-
-behaviour(smell_strange, [root]).
-
-behaviour(stunted_growth, [all, stem, leaves, shoot, upper_leaves]).
-behaviour(increased_growth, [roots]).
-behaviour(delayed_growth, [all]).
-behaviour(excessive_tillering_growth, [all]).
-behaviour(highly_branched_growth, [roots]).
+% manifest_color/2
+manifest_color(altered_color, chlorotic).
+manifest_color(altered_color, dark_green).
+manifest_color(altered_color, blotchy_chlorosis).
+manifest_color(altered_color, interveinal_chlorosis).
+manifest_color(altered_color, chlorotic).
+manifest_color(altered_color, reddish_purple).
+manifest_color(altered_color, dark_veins).
+manifest_color(altered_color, brown_discoloration).
+manifest_color(altered_color, angular_chlorosis).
+manifest_color(altered_color, brown).
+manifest_color(altered_color, rounded_chlorosis).
+manifest_color(altered_color, bronze).
+manifest_color(altered_color, yellowish_outline).
+manifest_color(cotton_like_downy_substance, greysh).
+manifest_color(cotton_like_downy_substance, white).
+manifest_color(flies, white).
+manifest_color(fuzzy_looking_spores, greysh).
+manifest_color(fuzzy_mold, grey).
+manifest_color(husks, grey).
+manifest_color(husks, white).
+manifest_color(irregular_water_soaked_blotches, greenish_black).
+manifest_color(irregular_water_soaked_blotches, greenish_black).
+manifest_color(large_spots, black).
+manifest_color(leathery_spot, black).
+manifest_color(small_flies, black).
+manifest_color(spots, black).
+manifest_color(spots, black).
+manifest_color(spots, brown).
+manifest_color(spots, chlorosis).
+manifest_color(spots, dark_brown).
+manifest_color(spots, dark_margin).
+manifest_color(spots, necrotic).
+manifest_color(spots, pale_green).
+manifest_color(spots, purplish).
+manifest_color(spots, red).
+manifest_color(spots, reddish).
+manifest_color(spots, tan).
+manifest_color(spots, whitish_yellow).
+manifest_color(spots, yellow).
+manifest_color(sunken_spot, black).
 
 % humidity_range
 humidity_range(flowering_mature, 40, 50).

@@ -31,8 +31,7 @@ init :-
 cleanup_init :-
     retractall(asked(_, _)),
     retractall(symptom(_,_)),
-    retractall(symptom(_,_,_)),
-    retractall(current_section(_)).
+    retractall(symptom(_,_,_)).
 
 % set_fruition_mode/0
 set_fruition_mode :- 
@@ -57,7 +56,7 @@ kb_consult :- askif(fruition_mode(kb_consult)).
 
 % kb_browse/0
 kb_browse :- 
-    L = [health_problems, sections, appearances, colors, behaviours, treatments],
+    L = [health_problems, sections, manifestations, colors, treatments, rules],
     maplist(kb_browse_full, L).
 
 % kb_browse_full/1
@@ -73,38 +72,30 @@ health_problems(L1) :-
     all(T, class(C, T), L),
     maplist(problem_card, L, L1).
 
-% % symptom/2
-% symptom(X, Y) :-
-%     section(X),
-%     behaviour(Y, L),
-% symptom(X, Y) :-
-%     section(X),
-%     appearance(Y, _).
-% % symptom/3
-% symptom(X, Y, Z) :-
-%     section(X),
-%     appearance(Y, _),
-%     color(Z).
+rules(L) :- all((P, X, R), (class(P, X), clause(type(X), R)), L).
 
-% Unifies L with the appearances' list that may be manifested on the X section. 
-section_appereances(A) :-
-    current_section(X),
-    section_appereances(X, A).
-section_appereances(X, A) :-
-    section(X),
-    all(Y, (appearance(Y, L), member(Z, L), Z = X), A).
-section_behaviours(B) :-
-    current_section(X),
-    section_behaviours(X, B).
-section_behaviours(X, B) :-
-    section(X),
-    all(Y, (behaviour(Y, L), member(Z, L), Z = X), B).
+deficiencies(L) :- all(X, class(nutrient_deficiency, X), L).
+diseases(L) :- all(X, class(disease, X), L).
+infestations(L) :- all(X, class(infestation, X), L).
+
+% manifestations/1
+manifestations(L) :- all(M, manifest_section(M, S), L).
 
 % sections/1
-sections(L) :- all(X, section(X), L).
-appearances(L) :- all(X, appearance(X, _), L).
-behaviours(L) :- all(X, behaviour(X, _), L).
-colors(L) :- all(X, color(X), L).
+sections(L) :- all(S, manifest_section(_, S), L).
+
+% colors/1
+colors(L) :- all(C, manifest_color(_, C), L).
+
+% section_manifestations/2
+current_manifestation_sections(L) :-
+    current_manifestation(M),
+    all(S, manifest_section(M, S), L).
+
+% manifest_colors/2
+current_manifest_colors(L) :- 
+    current_manifestation(M),
+    all(C, manifest_color(M, C), L).
 
 % treatments/1
 treatments(L2) :- 
@@ -112,10 +103,12 @@ treatments(L2) :-
     maplist(treatment_card, L, L1),
     flatten(L1, L2).
 
+% problem/3
 problem(P, T, C) :- 
     health_problem(P, C),
     class(C, T).
 
+% browse/1
 browse(X) :-
     kb_consult,
     wwuln(X),
@@ -128,8 +121,8 @@ browse(X) :-
     maplist(is_list, L),
     flatten(L, L1),
     menu_display(X, L1).
+#TODO browse rules
 
-% browse/1
 browse(X) :-
     user_consult,
     call(X, L),
@@ -148,36 +141,29 @@ once_again :- askif(new_symptom).
 
 % symptomatology_rule/0
 symptomatology_rule :- 
-    localization,
-    has_appearance,
-    get_user_choice(section_appereances, X),
-    (X = altered_color -> 
-        get_user_choice(colors, Y),
-        store(appearance, X, Y)
-        ;
-        store(appearance, X)).
-symptomatology_rule :- 
-    localization,
-    has_behaviour,
-    get_user_choice(section_behaviours, X),
-    store(behaviour, X).
-
-% localization/0
-localization :- has_been_localized.
-localization :- get_user_choice(sections, X), store(X).
-has_been_localized :- current_section(X).
-
-has_appearance :- askif(has(appearance)).   
-has_color :- askif(has(color)).
-has_behaviour :- askif(has(behaviour)).
+    askif(has(manifestation)),
+    get_user_choice(manifestations, M),
+    assertz(current_manifestation(M)),
+    symptomatology_forward.
+    
+% symptomatology_forward/0
+symptomatology_forward :-
+    \+ manifest_color(M, _),
+    current_manifestation(M),
+    get_user_choice(current_manifestation_sections, S),
+    store(S, M).
+symptomatology_forward :-
+    manifest_color(M, _),
+    current_manifestation(M),
+    get_user_choice(current_manifest_colors, C), 
+    get_user_choice(current_manifestation_sections, S),
+    store(S, M, C).
 
 % cleanup_symptomatology/0
 cleanup_symptomatology :- 
     retractall(asked(new_symptom, _)),
-    retractall(asked(has(appearance), _)),
-    retractall(asked(has(color), _)),
-    retractall(asked(has(behaviour), _)),
-    retractall(current_section(_)).
+    retractall(asked(has(manifestation), _)),
+    retractall(asked(has(current_manifestation), _)).
 
 % get_user_choice/2
 % Unifies the concept X with a list of options L, reads the user choice from that list and unifies it with Y.
@@ -188,26 +174,13 @@ get_user_choice(X, Y) :-
 % Progressive building of the manifested symptom.
 % Each symptom manifested on a section, and may have an appereance, an appereance with a color or a behaviour.
 
-% store/1 - Stores the selected section.
-store(X) :- 
-    section(X),
-    asserta(current_section(X)).
-% store/2 - Stores a 1st level property of the symptom manifested on the previously saved section.
-store(X, Y) :-
-    \+ section(X),
-    callable(X),
-    current_section(Z),
-    retract(current_section(Z)),
-    asserta(symptom(Z, Y)),
+% store/2 - Asserts a manifestation of the symptom.
+store(S, M) :-
+    assertz(symptom(S, M)),
     cleanup_symptomatology.
-% store/3 - Stores a 2nd level property of the symptom.
-store(X, Y, Z) :-
-    \+ section(X),
-    callable(X),
-    color(Z),
-    current_section(S),
-    retract(current_section(S)),
-    asserta(symptom(S, Y, Z)),
+% store/3 - Section S, manifestation M, color C
+store(S, M, C) :-
+    assertz(symptom(S, M, C)),
     cleanup_symptomatology.
 
 % menu_ask/3 - Menu title T, options' list L, entry name X
