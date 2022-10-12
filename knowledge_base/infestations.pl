@@ -42,8 +42,8 @@ treatment(scale_insects, 'spray with neem oil and insecticidal soap').
 treatment(scale_insects, 'dab individual scales with alcohol').
 
 % white_flies
-type(white_flies) :- symptom(leaves, white_flies), symptom(leaves, altered_color, chlorotic).
-type(white_flies) :- symptom(leaves, white_flies), symptom(leaves, dry).
+type(white_flies) :- symptom(leaves, flies, white), symptom(leaves, altered_color, chlorotic).
+type(white_flies) :- symptom(leaves, flies, white), symptom(leaves, dry).
 treatment(white_flies, 'apply sticky traps').
 treatment(white_flies, 'spray with neem oil and insecticidal soap').
 

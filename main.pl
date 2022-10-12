@@ -2,6 +2,8 @@
 
 :- use_module(library(lists)).
 :- use_module(library(apply_macros)).
+:- use_module(library(system)).
+:- use_module(library(random)).
 
 :- dynamic asked/2.
 :- dynamic current_section/1.
@@ -9,12 +11,7 @@
 :- dynamic symptom/3.
 :- dynamic type/1.
 
-:- [greenhouse, deficiencies, diseases, infestations, messages].
-
-test :-
-    assertz(symptom(leaves, circular_lesions)),
-    assertz(symptom(fruits, spots, red)),
-    assertz(symptom(fruits, clear_gummy_substance)).
+:- [knowledge_base/kb, sensors].
 
 % start/0
 start :- 
@@ -42,6 +39,11 @@ set_fruition_mode :-
     \+ (user_consult),
     kb_consult,
     kb_browse.
+set_fruition_mode :-
+    \+ (user_consult),
+    \+ (kb_consult),
+    sensor_consult,
+    sensor_init.
 
 % restart/0
 restart :- 
@@ -53,6 +55,7 @@ restart :-
 
 user_consult :- askif(fruition_mode(user_consult)).
 kb_consult :- askif(fruition_mode(kb_consult)).
+sensor_consult :- askif(fruition_mode(sensor_consult)).
 
 % kb_browse/0
 kb_browse :- 
@@ -111,17 +114,23 @@ problem(P, T, C) :-
 % browse/1
 browse(X) :-
     kb_consult,
+    X \= rules,
     wwuln(X),
     call(X, L),
     menu_display(L).
 browse(X) :-
     kb_consult,
+    X \= rules,
     wwuln(X),
     call(X, L),
     maplist(is_list, L),
     flatten(L, L1),
     menu_display(X, L1).
-#TODO browse rules
+browse(X) :-
+    kb_consult,
+    X = rules,
+    rules(L),
+    maplist(wwuln, L).
 
 browse(X) :-
     user_consult,
@@ -144,17 +153,15 @@ symptomatology_rule :-
     askif(has(manifestation)),
     get_user_choice(manifestations, M),
     assertz(current_manifestation(M)),
-    symptomatology_forward.
+    symptomatology_forward(M).
     
 % symptomatology_forward/0
-symptomatology_forward :-
+symptomatology_forward(M) :-
     \+ manifest_color(M, _),
-    current_manifestation(M),
     get_user_choice(current_manifestation_sections, S),
     store(S, M).
-symptomatology_forward :-
+symptomatology_forward(M) :-
     manifest_color(M, _),
-    current_manifestation(M),
     get_user_choice(current_manifest_colors, C), 
     get_user_choice(current_manifestation_sections, S),
     store(S, M, C).
@@ -273,8 +280,8 @@ explain_diagnosis(X) :-
     call(X),
     clause(type(T), X),
     problem_card(T, A),
-    wwu('- Because you have selected '), wwu(X), wwu(', the diagnosis is '), wwuln(A),
-    explain_treatment(T).
+    wwu('- The diagnosis for '), wwu(X), wwu(', is '), wwuln(A),
+    explain_treatment(T), nl.
     
 % conj_to_list((H, C), [H|T]) :-
 %     !,
