@@ -2,8 +2,6 @@
 
 :- use_module(library(lists)).
 :- use_module(library(apply_macros)).
-:- use_module(library(system)).
-:- use_module(library(random)).
 
 :- dynamic asked/2.
 :- dynamic current_section/1.
@@ -11,7 +9,7 @@
 :- dynamic symptom/3.
 :- dynamic type/1.
 
-:- [knowledge_base/kb, sensors].
+:- [knowledge_base/kb].
 
 % start/0
 start :- 
@@ -34,7 +32,7 @@ cleanup_init :-
 set_fruition_mode :- 
     user_consult,
     symptomatology,
-    diagnosis.
+    user_diagnosis.
 set_fruition_mode :-
     \+ (user_consult),
     kb_consult,
@@ -43,6 +41,7 @@ set_fruition_mode :-
     \+ (user_consult),
     \+ (kb_consult),
     sensor_consult,
+    ensure_loaded(sensors),
     sensor_init.
 
 % restart/0
@@ -115,13 +114,13 @@ problem(P, T, C) :-
 browse(X) :-
     kb_consult,
     X \= rules,
-    wwuln(X),
+    writeln(X),
     call(X, L),
     menu_display(L).
 browse(X) :-
     kb_consult,
     X \= rules,
-    wwuln(X),
+    writeln(X),
     call(X, L),
     maplist(is_list, L),
     flatten(L, L1),
@@ -130,7 +129,7 @@ browse(X) :-
     kb_consult,
     X = rules,
     rules(L),
-    maplist(wwuln, L).
+    maplist(writeln, L).
 
 browse(X) :-
     user_consult,
@@ -159,18 +158,12 @@ symptomatology_rule :-
 symptomatology_forward(M) :-
     \+ manifest_color(M, _),
     get_user_choice(current_manifestation_sections, S),
-    store(S, M).
+    user_store(S, M).
 symptomatology_forward(M) :-
     manifest_color(M, _),
     get_user_choice(current_manifest_colors, C), 
     get_user_choice(current_manifestation_sections, S),
-    store(S, M, C).
-
-% cleanup_symptomatology/0
-cleanup_symptomatology :- 
-    retractall(asked(new_symptom, _)),
-    retractall(asked(has(manifestation), _)),
-    retractall(asked(has(current_manifestation), _)).
+    user_store(S, M, C).
 
 % get_user_choice/2
 % Unifies the concept X with a list of options L, reads the user choice from that list and unifies it with Y.
@@ -181,31 +174,37 @@ get_user_choice(X, Y) :-
 % Progressive building of the manifested symptom.
 % Each symptom manifested on a section, and may have an appereance, an appereance with a color or a behaviour.
 
-% store/2 - Asserts a manifestation of the symptom.
-store(S, M) :-
+% user_store/2 - Asserts a manifestation of the symptom.
+user_store(S, M) :-
     assertz(symptom(S, M)),
     cleanup_symptomatology.
-% store/3 - Section S, manifestation M, color C
-store(S, M, C) :-
+% user_store/3 - Section S, manifestation M, color C
+user_store(S, M, C) :-
     assertz(symptom(S, M, C)),
     cleanup_symptomatology.
+
+% cleanup_symptomatology/0
+cleanup_symptomatology :- 
+    retractall(asked(new_symptom, _)),
+    retractall(asked(has(manifestation), _)),
+    retractall(asked(has(current_manifestation), _)).
 
 % menu_ask/3 - Menu title T, options' list L, entry name X
 menu_ask(T, L, Y) :-
     menu_with_title(T, L), nl,
     message_code(item_number_no_exit, M),
-    wwuln(M),  nl,
+    writeln(M), nl,
     read(X),
     menu_input_handler(L, X, Y).
 
 % menu_display/2 - Shows the title and goes ahead with the diplaying part.
 menu_with_title(T, L) :- 
     message_code(T, X),
-    wwuln(X),
+    writeln(X),
     menu_display(L).
 menu_with_title(T, L) :-
     \+ message_code(T, X),
-    wwuln(T),
+    writeln(T),
     menu_display(L).
 
 % menu_display/1 - Options' list L, counter starts from 1
@@ -214,7 +213,7 @@ menu_display(L) :- menu_display(L, 1), !.
 menu_display([], _).
 menu_display([H|T], N) :-
     atomic_concat([N, '. ', H], A),
-    wwuln(A),
+    writeln(A),
     N1 is N + 1,
     menu_display(T, N1).
 
@@ -231,7 +230,7 @@ validate_entry(L, X) :-
 validate_entry(L, X) :-
     not(member(X, L)),
     message_code(not_recognized_value, M),
-    wwuln(M).
+    writeln(M).
 
 % string_replace/4 Retrieves the codes to allow a proper replacement within the 3rd argument list.
 string_replace(X, Y, L1, Z) :-
@@ -255,19 +254,19 @@ replace(X, Y, [H|T1], [H|T2]) :- % X is not in the first position, do nothing
     replace(X, Y, T1, T2).
 
 % diagnosis/0    
-diagnosis :-
+user_diagnosis :-
     \+ observed_symptoms,
     message_code(no_symptom, M),
-    wwuln(M).
-diagnosis :-
+    writeln(M).
+user_diagnosis :-
     observed_symptoms,
     \+ (type(X)),
     message_code(no_diagnosis, M),
-    wwuln(M).
-diagnosis :-
+    writeln(M).
+user_diagnosis :-
     observed_symptoms,
-    all(R, (type(X), clause(type(X), R)), C),
-    maplist(explain_diagnosis, C).
+    all(diagnosis(T, B), (type_body(T, B), observed_symptoms(S), match(B, S)), D),
+    maplist(explain_diagnosis, D).
 
 % observed_symptoms/0
 observed_symptoms :- symptom(_,_).
@@ -277,20 +276,29 @@ observed_symptoms :- symptom(_,_,_).
 explain_diagnosis(X) :- 
     \+ call(X).
 explain_diagnosis(X) :-
-    call(X),
-    clause(type(T), X),
+    X = diagnosis(T, B),
     problem_card(T, A),
-    wwu('- The diagnosis for '), wwu(X), wwu(', is '), wwuln(A),
+    write('- The diagnosis for '), write(X), write(', is '), writeln(A),
+    write('because of '), writeln(B),
     explain_treatment(T), nl.
-    
-% conj_to_list((H, C), [H|T]) :-
-%     !,
-%     conj_to_list(C, T).
-% conj_to_list(H, [H]).
 
-% match([H|T], L):-
-%     member(H, L),
-%     match(T, L).
+% observed_symptoms/1 Unifies S with the aggregated lists of symptoms
+observed_symptoms(S) :- 
+    findall(symptom(M1, S1), (type(T1), symptom(M1, S1)), R1), 
+    findall(symptom(M2, S2, C), (type(T2), symptom(M2, S2, C)), R2),
+    append([R1, R2], L),
+    all(X, member(X, L), S).
+
+% type_body/2 Unifies B with the right side of the type predicate
+type_body(T, B) :-
+    type(T),
+    clause(type(T), R),
+    conj_to_list(R, B).
+    
+conj_to_list((H, C), [H|T]) :-
+    !,
+    conj_to_list(C, T).
+conj_to_list(H, [H]).
 
 % problem_card/4 - The predicate holds when the first argument is a KB 'type' ground atom,
 % and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
@@ -302,26 +310,19 @@ problem_card(T, A) :-
 
 treatment_card(T, L) :- all(A, (treatment(T, D), atomic_concat([T, ': ', D], A)), L).
 
-% wwu/1 - wwu Without Underscore predicate
-wwu(X) :- 
-    % string_replace('_', ' ', X, X1),
-    write(X).
-% wwuln/1
-wwuln(X) :- wwu(X), nl.
-
 % explain_treatment/1
 explain_treatment(X) :-
     class(nutrient_deficiency, X),
-    wwuln('Treatment: provide the missing nutrient to the plant.').
+    writeln('Treatment: provide the missing nutrient to the plant.').
 explain_treatment(X) :-
     \+ class(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
     bagof(Y, treatment(X, Y), L),
-    wwuln('Treatment: '),
-    maplist(wwuln, L).
+    writeln('Treatment: '),
+    maplist(writeln, L).
 explain_treatment(X) :-
     \+ class(nutrient_deficiency, X),
     \+ treatment(X),
-    wwuln('Treatment: There a no treatments').
+    writeln('Treatment: There a no treatments').
 
 % askif/1
 askif(Q) :-
@@ -332,7 +333,7 @@ askif(Q) :-
 ask(Qcode, A) :- asked(Qcode, A).
 ask(Qcode, A) :- \+ (asked(Qcode, A)),
     question_code(Qcode, Q),
-    wwu(Q), wwu('?'), nl,
+    write(Q), write('?'), nl,
     read(A2),
     ask2(Q, Qcode, A2, A).
 
@@ -342,7 +343,7 @@ positive_answer(Qcode, A) :-
     \+ (negative(A)),
     \+ (affirmative(A)),
     message_code(yes_or_no, M),
-    wwu(M),
+    write(M), nl,
     read(A2),
     retract(asked(Qcode, A)),
     asserta(asked(Qcode, A2)),
@@ -355,7 +356,7 @@ askifnot(Q) :- not(askif(Q)).
 ask(Qcode, A) :- asked(Qcode, A).
 ask(Qcode, A) :- \+ (asked(Qcode, A)),
     question_code(Qcode, Q),
-    wwu(Q), wwu('?'), nl,
+    write(Q), write('?'), nl,
     read(A2),
     ask2(Q, Qcode, A2, A).
 
@@ -371,11 +372,11 @@ ask2(Q, Qcode, A, A) :-
 % explain/1
 explain(X) :- 
     explanation(X, Y),
-    wwuln(Y).
+    writeln(Y).
 explain(X) :-
     \+ explanation(X, Y),
     message_code(no_explanation, M),
-    wwuln(M).
+    writeln(M).
 
 % affirmative/1
 affirmative(yes).

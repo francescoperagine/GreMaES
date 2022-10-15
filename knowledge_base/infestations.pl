@@ -1,5 +1,5 @@
 % health_problem/2
-health_problem(biotic, infestation).
+health_problem(pests, infestation).
 
 % class/2
 class(infestation, apthids).

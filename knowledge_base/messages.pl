@@ -7,8 +7,8 @@ welcome :-
 
 welcome_sensor :-
     writeln('This is the GreMaES sensor mode.'),
-    writeln('To check out the functionalities of the system, some sensors\' reading will be randomly generated.'),
-    writeln('These are the plants actually hosted in our virtual greenhouse:').
+    writeln('To check out the functionalities of the system, some devices\' readings sampling will be randomly generated.'),
+    writeln('Plants hosted in our virtual greenhouse:').
 
 goodbye :-
     nl, writeln('Thank you for using the greenhouse management program.'),
@@ -23,10 +23,10 @@ explanation(fruition_mode(user_consult), 'Provide the symptoms that the plant ex
 question_code(fruition_mode(kb_consult), 'Do you want to browse all the Knowledge Base facts').
 explanation(fruition_mode(kb_consult), 'Shows all the informations about health problems, symptoms, treatments').
 question_code(fruition_mode(sensor_consult), 'Do you want to enter the sensors\' mode').
-explanation(fruition_mode(sensor_consult), 'Simulates the use of sensors to test the automations of the system').
+explanation(fruition_mode(sensor_consult), 'Simulates the use of devices to test the automations of the system').
 question_code(start_again, 'Would you like to run the program again').
 question_code(new_symptom, 'Would you like to register a new symptom').
-question_code(continue_time_loop, 'Do you want to continue the testing').
+question_code(continue_time_loop, 'Do you want to continue the sampling').
 
 question_code(view(X), X) :- write('Would you like to browse the ').
 question_code(has(X), X) :- write('Does it have a particular ').

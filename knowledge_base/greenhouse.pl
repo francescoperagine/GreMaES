@@ -1,23 +1,48 @@
-% plant/4 - Defines the variables ranges for each plant
-% plant(Plant, TemperatureMin, TemperatureMax, humidity_range).
-plant(trinidad1, 24, 28, greenhouse).
-plant(sunflower, 25, 30, flowering_mature).
-plant(p3, 10, 16, succulents).
+% species/3 - Name, minimum temperature, maximum temperature
+species(capsicum_chinense, 22, 26).
+species(helianthus_annuus, 18, 30).
+species(phalaenopsis, 16, 24).
+species(spathiphyllum_wallisii, 18, 26).
+species(paphiopedilum_platyphyllum, 16, 25).
 
-% device/4 - Associates sensors with plants
-% device(Plant, TemperatureDevice, HumidityDevice, CaptionDevice)
+% plant/3 Plant, species, stage.
+plant(trinidad1, capsicum_chinense, greenhouse).
+plant(sunflower, helianthus_annuus, flowering_mature).
+plant(p1, phalaenopsis, orchid_growth_development).
+plant(p2, phalaenopsis, orchid_growth_development).
+plant(p3, phalaenopsis, orchid_growth_development).
+plant(p4, paphiopedilum_platyphyllum, orchid_growth_development).
+plant(spatafillo, spathiphyllum_wallisii, spathiphyllum).
 
-device(trinidad1, t11, h12, c11).
-device(sunflower, t21, h21, c21).
-device(p3, t31, h31, c31).
+% device/3
+device(t11, temperature, trinidad1).
+device(t12, temperature, sunflower).
+device(t13, temperature, p1).
+device(t14, temperature, p2).
+device(t15, temperature, p3).
+device(t16, temperature, p4).
+device(t17, temperature, spatafillo).
 
-sensor_class(caption).
-sensor_class(humidity).
-sensor_class(temperature).
+device(h11, humidity, trinidad1).
+device(h12, humidity, sunflower).
+device(h13, humidity, p1).
+device(h14, humidity, p2).
+device(h15, humidity, p3).
+device(h16, humidity, p4).
+device(h17, humidity, spatafillo).
 
-% humidity_range
-humidity_range(flowering_mature, 40, 50).
-humidity_range(vegetative_growing, 50, 60).
-humidity_range(greenhouse, 60, 80).
-humidity_range(seed_germination, 90, 100).
-humidity_range(succulents, 20, 30).
+device(c11, caption, trinidad1).
+device(c12, caption, sunflower).
+device(c13, caption, p1).
+device(c14, caption, p2).
+device(c15, caption, p3).
+device(c16, caption, p4).
+device(c17, caption, spatafillo).
+
+% stage/3
+stage(flowering_mature, 40, 50).
+stage(vegetative_growing, 50, 60).
+stage(orchid_growth_development, 50, 70).
+stage(greenhouse, 60, 80).
+stage(seed_germination, 90, 100).
+stage(spathiphyllum, 50, 80).

@@ -1,22 +1,46 @@
-reading_variance(X) :- X is 1.3.
+:- use_module(library(system)).
+:- use_module(library(random)).
 
-% sensor_mode/0 Starts the sensor mode.
+:- [knowledge_base/greenhouse].
+:- dynamic plant_symptom/3.
+:- dynamic plant_symptom/4.
+:- dynamic diagnosis/1.
+:- dynamic log/1.
+
+
+loop_repetitions(X) :- X is 15.
+loop_interval(X) :- X is 1.
+reading_variance(X) :- X is 1.2.
+
+% device_mode/0 Starts the sensor mode.
 sensor_init :-
-    cleanup_init,
-    welcome_sensor,
+    sensor_cleanup,
+    welcome_sensor, nl,
     plants(L),
-    maplist(wwuln, L),
-    loop_init.
+    maplist(writeln, L), nl,
+    loop_init,
+    sampling_diagnosis.
 
-plants(L) :- all(P-temp-Tmin-Tmax-hum-Hrange, plant(P, Tmin, Tmax, Hrange) , L).
+sensor_cleanup :-
+    retractall(symptom(_,_)),
+    retractall(symptom(_,_,_)),
+    retractall(plant_symptom(_,_,_)),
+    retractall(plant_symptom(_,_,_,_)),
+    retractall(diagnosis(_)),
+    retractall(asked(continue_time_loop, _)),
+    retractall(log(_)).
 
-loop_init :- time_loop(3, 3).
+plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax), stage(H, Hmin, Hmax)), L).
+
+loop_init :- 
+    loop_repetitions(X),
+    loop_interval(Y),
+    time_loop(X, Y).
 
 % time_loop/1 - Loops X of duration Y in seconds. For each repetition, simulates a sensor reading.
 time_loop(X, Y) :-
     X > 0,
-    sampling_monitoring,
-    sampling_diagnosis,
+    random_sampling,
     retractall(asked(continue_time_loop, _)),
     sleep(Y),
     X1 is X - 1,
@@ -26,108 +50,122 @@ time_loop(X, Y) :-
     askif(continue_time_loop) -> 
         loop_init
         ;
-        !, cleanup_init, abort.
+        !.
 
-sampling_monitoring :- 
-    all(X, sensor_class(X), TL),
-    length(TL, TLL),
-    random(0, TLL, RTN), 
-    nth0(RTN, TL, T),
-    sensors(T, SL), 
-    length(SL, SLL), 
-    random(0, SLL, RSN), 
-    nth0(RSN, SL, S), 
-    sampling(T, S).
+types(L) :- setof(X, device(_, X, _), L).
+device_plant(S, P) :- device(S, _, P).
+devices_by_type(T, L) :- setof(X, device(X, T, _), L).
+random_device(D) :- all(X, device(X, _, _), L), random_list_element(L, D).
 
-% sensors/2
-sensors(T, L) :- T = temperature, all(D, device(_, D, _, _), L).
-sensors(T, L) :- T = humidity, all(D, device(_, _, D, _), L).
-sensors(T, L) :- T = caption, all(D, device(_, _, _, D), L).
+random_sampling :- 
+    random_device(D),
+    sampling(D).
 
-% sensor_plant/2
-sensor_plant(S, P) :- device(P, S, _, _).
-sensor_plant(S, P) :- device(P, _, S, _).
-sensor_plant(S, P) :- device(P, _, _, S).
+random_list_element(P, E) :-
+    callable(P),
+    call(P, L),
+    random_list_element(L, E).
+random_list_element(L, E) :-
+    length(L, N),
+    random(0, N, R),
+    nth0(R, L, E).
 
-% reading/2 - Type T, sensor S
-sampling(T, S) :-
+% sampling(D) :-
+sampling(D) :-
+    device(D, T, P),
     T \= caption,
     reading_variance(V),
     range_value(T, Min, Max),
     MinV is Min / V,
     MaxV is Max * V,
     random(MinV, MaxV, N),
-    sampling_output(T, S, N).
-sampling(T, S) :-
+    N1 is floor(N),
+    sampling_output(P, T, D, N1).
+sampling(D) :-
+    device(D, T, P),
     T = caption,
-    manifestations(ML),
-    length(ML, MLL),
-    random(0, MLL, N), 
-    nth0(N, ML, M), 
-    caption_forward(M, A),
-    sampling_output(T, S, A).
+    random_list_element(manifestations, M),
+    caption_forward(P, M, A),
+    sampling_output(P, T, D, A).
 
-% sampling_output/3
-sampling_output(T, S, A) :-
-    sensor_plant(S, P),
-    datime(X), X =.. [datime|L],
-    atomic_list_concat(L, '-', D),
-    atomic_list_concat([D, T, S, A], '_', R),
-    assertz(sampling(R)),
-    wwu(R).
+% sampling_output/4
+sampling_output(P, T, D, A) :-
+    datime(datime(Year, Month, Day, Hour, Minute, Second)),
+    flatten([datetime(Year/Month/Day, Hour:Minute:Second), plant(P), type(T), device(D), value(A)], R),
+    assertz(log(R)),
+    writeln(R).
 
 % range_value/3 Unifies min/max with the respective types
 range_value(T, Min, Max) :-
     T = temperature,
-    all(Tmin, plant(_, Tmin, _, _), TminL),
-    all(Tmax, plant(_, _, Tmax, _), TmaxL),
+    all(Tmin, species(_, Tmin, _), TminL),
+    all(Tmax, species(_, _, Tmax), TmaxL),
     min_list(TminL, Min),
     max_list(TmaxL, Max).
 range_value(T, Min, Max) :-
     T = humidity,
-    all(Hmin, humidity_range(_, Hmin, _), HminL),
-    all(Hmax, humidity_range(_, Hmax, _), HmaxL),
+    all(Hmin, stage(_, Hmin, _), HminL),
+    all(Hmax, stage(_, Hmax, _), HmaxL),
     min_list(HminL, Min),
     max_list(HmaxL, Max).
 
 % caption_forward/2
-caption_forward(M, A) :-
+caption_forward(P, M, A) :-
     \+ manifest_color(M, _),
-    caption_section(M, S),
-    store(S, M),
-    atomic_list_concat([S, M], '_', A).
-caption_forward(M, A) :-
+    sampling_manifest_section(M, S),
+    sensor_store(P, S, M),
+    A = symptom(S, M).
+caption_forward(P, M, A) :-
     all(X, manifest_color(M, X), CL),
     length(CL, CLL),
     random(0, CLL, N),
     nth0(N, CL, C),
-    caption_section(M, S),
-    store(S, M, C),
-    atomic_list_concat([S, M, C], '_', A).
+    sampling_manifest_section(M, S),
+    sensor_store(P, S, M, C),
+    A = symptom(S, M, C).
 
-% caption_section/2
-caption_section(M, S) :-
-    all(X, manifest_section(M, X), SL),
-    length(SL, SLL),
-    random(0, SLL, N),
-    nth0(N, SL, S).
+sensor_store(P, S, M) :- assertz(symptom(S, M)), assertz(plant_symptom(P, S, M)).
+sensor_store(P, S, M, C) :- assertz(symptom(S, M, C)), assertz(plant_symptom(P, S, M, C)).
+sampling_manifest_section(M, S) :- all(X, manifest_section(M, X), L), random_list_element(L, S).
+
+plant_symptom(P, S, M) :- 
+plant_symptom(P, S, M, C).
 
 % sampling_diagnosis/0
 sampling_diagnosis :- 
     observed_symptoms,
-    all(R, (type(X), clause(type(X), R)), C),
-    maplist(problem_card, C, C1),
-    maplist(wwuln, C1), nl.
+    setof(diagnosis(P, T, R), (type_body(T, B), plant_symptoms_type_body(P, B)), D),
+    maplist(logs, D).
 sampling_diagnosis :- 
     observed_symptoms,
+    \+ diagnosis(_),
     message_code(no_diagnosis, M),
-    wwu(' '), wwuln(M), nl.
+    writeln(M).
 
-% temperature_sampling(Device, temperature_reading) :- ask(temperature_reading, X).
+% plant_symptoms_type_body/2 unifies P with the plant affected by the symptoms
+plant_symptoms_type_body(P, B) :-
+    observed_symptoms(S),
+    match(B, S),
+    member(X, B),
+    plant_by_symptom(P, X).
 
-% humidity_sampling(Device, humidity_reading) :- 
+plant_by_symptom(P, X) :-
+    X = symptom(S, M, C),
+    plant_symptom(P, S, M, C),
+    manifest_color(_, C).
+plant_by_symptom(P, X) :-
+    X = symptom(S, M),
+    plant_symptom(P, S, M).
 
-% caption_sampling(Device, /*CaptionSection,*/ caption_reading) :- 
+logs(D) :-
+    D = diagnosis(P, T, R),
+    assertz(D),
+    problem_card(T, A),
+    write(P), write(' is affected by '), writeln(A),
+    maplist(writeln, R).
+
+match(L1, L2):- forall(member(X, L1), member(X, L2)).
+
 
 % % temperature/2
 % temperature(Plant) :- 
@@ -156,14 +194,14 @@ sampling_diagnosis :-
 % % dry/1 - Soil is dry if the humidity reading of the sensor is lower than the ideal range of the plant's species.
 % dry(Plant) :- 
 %     plant(Plant, _, _, HumidityRef),
-%     humidity_range(HumidityRef, HumidityMin, _),
+%     stage(HumidityRef, HumidityMin, _),
 %     humidity(Plant, humidity_reading),
 %     humidity_reading < HumidityMin.
 
 % % wet/1 - Soil is wet if  the humidity reading of the sensor is higher than the ideal range of the plant's species.
 % wet(Plant) :-
 %     plant(Plant, _, _, HumidityRef),
-%     humidity_range(HumidityRef, _, HumidityMax),
+%     stage(HumidityRef, _, HumidityMax),
 %     humidity(Plant, humidity_reading),
 %     humidity_reading > HumidityMax.
 
