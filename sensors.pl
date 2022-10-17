@@ -182,10 +182,9 @@ reading_diagnosis_forward(X) :-
     X = plant_reading(P, T, V),
     plant_range_values(P, T, Min, Max, Avg),
     range(V, Min, Max, S),
-    write('- Plant '), write(P), write(' reading of '), write(T), write(' is '), write(S),
+    write('- Plant '), write(P), write(' reading of '), write(T), write(' is '), writeln(S),
     assertz(diagnosis(P, T:S, reading(T, V, Min, Max))),
-    actuator_init(P, T, S, Avg),
-    nl.
+    actuator_init(P, T, S, Avg).
 
 % observed_diagnosis_body/2 unifies P with the plant affected by the symptoms
 observed_diagnosis_body(P, B) :-
@@ -226,15 +225,27 @@ actuator_init(P, T, S, Avg). % if there isn't one, no matter.
 
 actuator_forward(P, A, S, K, Avg) :-
     S = normal,
-    (actuator_status(A, on) -> retract(actuator_status(A, on))),
-    assertz(actuator_status(A, off)),
+    actuator_off(A),
     write(' * '), write(K), write(' '), write(A), write(' is off.').
 actuator_forward(P, A, S, K, Avg) :-
     S \= normal,
-    (actuator_status(A, off) -> retract(actuator_status(A, off))),
-    assertz(actuator_active(A, on)),
+    actuator_on(A),
     write(' * '), write(K), write(' '), write(A), write(' is on.').
-actuator_forward(P, A, S, K, Avg).
+
+actuator_on(A) :-
+    actuator_status(A, off),
+    retract(actuator_status(A, off)),
+    assertz(actuator_status(A, on)).
+actuator_on(A) :-
+    assertz(actuator_status(A, on)).
+
+actuator_off(A) :-
+    actuator_status(A, on),
+    retract(actuator_status(A, on)),
+    assertz(actuator_status(A, off)).
+actuator_off(A) :-
+    assertz(actuator_status(A, off)).
+    
 
 % log(X). % write to external log file.
 
