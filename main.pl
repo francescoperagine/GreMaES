@@ -9,7 +9,7 @@
 :- dynamic symptom/3.
 :- dynamic type/1.
 
-:- [knowledge_base/kb].
+:- [knowledge_base/kb, sensors].
 
 % start/0
 start :- 
@@ -30,18 +30,17 @@ cleanup_init :-
 
 % set_fruition_mode/0
 set_fruition_mode :- 
-    user_consult,
+    user_mode,
     symptomatology,
     user_diagnosis.
 set_fruition_mode :-
-    \+ (user_consult),
-    kb_consult,
+    \+ (user_mode),
+    kb_mode,
     kb_browse.
 set_fruition_mode :-
-    \+ (user_consult),
-    \+ (kb_consult),
-    sensor_consult,
-    ensure_loaded(sensors),
+    \+ (user_mode),
+    \+ (kb_mode),
+    sensor_mode,
     sensor_init.
 
 % restart/0
@@ -52,9 +51,9 @@ restart :-
     cleanup_init,
     goodbye.
 
-user_consult :- askif(fruition_mode(user_consult)).
-kb_consult :- askif(fruition_mode(kb_consult)).
-sensor_consult :- askif(fruition_mode(sensor_consult)).
+user_mode :- askif(fruition_mode(user_mode)).
+kb_mode :- askif(fruition_mode(kb_mode)).
+sensor_mode :- askif(fruition_mode(sensor_mode)).
 
 % kb_browse/0
 kb_browse :- 
@@ -112,13 +111,13 @@ problem(P, T, C) :-
 
 % browse/1
 browse(X) :-
-    kb_consult,
+    kb_mode,
     X \= rules,
     writeln(X),
     call(X, L),
     menu_display(L).
 browse(X) :-
-    kb_consult,
+    kb_mode,
     X \= rules,
     writeln(X),
     call(X, L),
@@ -126,17 +125,17 @@ browse(X) :-
     flatten(L, L1),
     menu_display(X, L1).
 browse(X) :-
-    kb_consult,
+    kb_mode,
     X = rules,
     rules(L),
     maplist(writeln, L).
 
 browse(X) :-
-    user_consult,
+    user_mode,
     call(X, L),
     menu_with_title(X, L).
 browse(X) :-
-    user_consult,
+    user_mode,
     call(X, L),
     maplist(is_list, L),
     flatten(L, L1),
@@ -278,8 +277,7 @@ explain_diagnosis(X) :-
 explain_diagnosis(X) :-
     X = diagnosis(T, B),
     problem_card(T, A),
-    write('- The diagnosis for '), write(X), write(', is '), writeln(A),
-    write('because of '), writeln(B),
+    write('- The diagnosis for '), write(X), write(', is '), write(A), write(', because of '), writeln(B),
     explain_treatment(T), nl.
 
 % observed_symptoms/1 Unifies S with the aggregated lists of symptoms
@@ -306,7 +304,7 @@ conj_to_list(H, [H]).
 problem_card(T, A) :-
     class(C, T),
     health_problem(H, C),
-    atomic_concat([H, ' problem, ', T, ' ', C, '.'], A).
+    atomic_concat([H, ' problem, ', T, ' ', C], A).
 
 treatment_card(T, L) :- all(A, (treatment(T, D), atomic_concat([T, ': ', D], A)), L).
 
@@ -393,12 +391,3 @@ negative(not).
 negative(never).
 negative(impossible).
 negative(haha).
-
-% match/2
-% match([H|T], L):-
-%     member(H, L),
-%     match(T, L).
-
-% remove_string_prefix(S, P, S1) :-
-%     atom_length(P, L),
-%     sub_atom(S, L, _, 0, S1).
