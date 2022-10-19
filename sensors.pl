@@ -1,19 +1,17 @@
 :- use_module(library(system)).
 :- use_module(library(random)).
 
-:- [knowledge_base/greenhouse].
 :- dynamic plant_symptom/3.
 :- dynamic plant_symptom/4.
 :- dynamic diagnosis/3.
 :- dynamic actuator_status/2.
 % :- dynamic log/1.
 
-
 loop_repetitions(X) :- X is 5.
 loop_interval(X) :- X is 1.
 reading_variance(X) :- X is 1.2.
 
-% device_mode/0 Starts the sensor mode.
+% sensor_init/0 - Initialize the sensor mode.
 sensor_init :-
     sensor_cleanup,
     welcome_sensor, nl,
@@ -21,7 +19,9 @@ sensor_init :-
     maplist(writeln, L), nl,
     loop_init,
     sensor_diagnosis.
+    % greenhouse_status.
 
+% sensor_cleanup/0
 sensor_cleanup :-
     retractall(symptom(_,_)),
     retractall(symptom(_,_,_)),
@@ -32,14 +32,18 @@ sensor_cleanup :-
     retractall(actuator_status(_, _)).
     % retractall(log(_)).
 
+% greenhouse_status :-
+
+
 plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax, _), stage(H, Hmin, Hmax, _)), L).
 
+% loop_init/0
 loop_init :- 
     loop_repetitions(X),
     loop_interval(Y),
     time_loop(X, Y).
 
-% time_loop/1 - Loops X of duration Y in seconds. For each repetition, simulates a sensor reading.
+% time_loop/2 - Loops X of duration Y in seconds. For each repetition, simulates a sensor reading.
 time_loop(X, Y) :-
     X > 0,
     sampling_init,
@@ -54,19 +58,21 @@ time_loop(X, Y) :-
         ;
         !.
 
-device_type(L) :- all(X, device(_, X, _), L).
-device_plant(S, P) :- device(S, _, P).
-random_device(D) :- all(X, device(X, _, _), L), random_list_element(L, D).
-
+sensor_type(L) :- all(X, sensor(_, X), L).
 is_color(X) :- colors(L), member(X, L).
-is_device_type(X) :- device_type(L), member(X, L).
+is_sensor_type(X) :- sensor_type(L), member(X, L).
 is_section(X) :- sections(L), member(X, L).
 is_manifestation(X) :-  manifestations(L), member(X, L).
 
 sampling_init :- 
-    random_device(D),
-    device(D, T, P),
+    random_sensor(D),
+    sensor(D, T),
+    sensor_plant(D, P),
     sampling(D, T, P).
+
+random_sensor(D) :- 
+    all(X, sensor(X, _), L),
+    random_list_element(L, D).
 
 random_predicate_element(P, E) :-
     callable(P),
@@ -77,7 +83,7 @@ random_list_element(L, E) :-
     random(0, N, R),
     nth0(R, L, E).
 
-% sampling(D) :-
+% sampling/3 :-
 sampling(D, T, P) :-
     T \= caption,
     reading_variance(Var),
@@ -100,7 +106,7 @@ sampling(D, T, P) :-
 sampling_output(P, T, D, A) :-
     sensor_store(P, A),
     datime(datime(Year, Month, Day, Hour, Minute, Second)),
-    flatten([datetime(Year/Month/Day, Hour:Minute:Second), plant(P), type(T), device(D), A], R),
+    flatten([datetime(Year/Month/Day, Hour:Minute:Second), plant(P), sensor(D, T), A], R),
     % maplist(log, R),
     writeln(R).
 
@@ -118,11 +124,11 @@ sensor_store(P, A) :-
     assertz(plant_symptom(P, S, M)).
 sensor_store(P, A) :- 
     A = reading(T, V),
-    is_device_type(T),
+    is_sensor_type(T),
     assertz(reading(T, V)),
     assertz(plant_reading(P, T, V)).
 
-% range_value/3 Unifies min/max with the respective device_type
+% range_value/3 Unifies min/max with the respective sensor_type
 range_value(T, Min, Max) :-
     T = temperature,
     all(Tmin, species(_, Tmin, _, _), TminL),
@@ -161,23 +167,27 @@ sensor_diagnosis :-
     message_code(no_diagnosis, M),
     writeln(M).
 
+% caption_diagnosis/0
 caption_diagnosis :- 
     all(diagnosis(P, T, R), (type_body(T, R), observed_diagnosis_body(P, R)), D),
     maplist(caption_diagnosis_forward, D).
 caption_diagnosis :- \+ type(X).
 
+% reading_diagnosis/0
 reading_diagnosis :- 
     all(plant_reading(P, T, V), plant_reading(P, T, V), L),
     maplist(reading_diagnosis_forward, L).
 reading_diagnosis :- \+ plant_reading(_, _, _).
 
+% caption_diagnosis_forward/1
 caption_diagnosis_forward(X) :-
     X = diagnosis(P, T, R),
     assertz(X),
-    \+ is_device_type(T),
+    \+ is_sensor_type(T),
     problem_card(T, A),
     write('- Plant '), write(P), write(' is affected by '), write(A), write(' because of '), R = [B], writeln(B).
 
+% reading_diagnosis_forward/1
 reading_diagnosis_forward(X) :-
     X = plant_reading(P, T, V),
     plant_range_values(P, T, Min, Max, Avg),
@@ -186,7 +196,7 @@ reading_diagnosis_forward(X) :-
     assertz(diagnosis(P, T:S, reading(T, V, Min, Max))),
     actuator_init(P, T, S, Avg).
 
-% observed_diagnosis_body/2 unifies P with the plant affected by the symptoms
+% observed_diagnosis_body/2 - unifies P with the plant affected by the symptoms
 observed_diagnosis_body(P, B) :-
     observed_symptoms(S),
     match(B, S),
@@ -248,5 +258,3 @@ actuator_off(A) :-
     
 
 % log(X). % write to external log file.
-
-match(L1, L2):- forall(member(X, L1), member(X, L2)).

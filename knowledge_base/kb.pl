@@ -1,1 +1,1 @@
-:- [deficiencies, diseases, infestations, manifestations, messages].
+:- [problem_deficiencies, problem_none, problem_diseases, problem_infestations, manifestations, messages, device_sensors, device_actuators, plants].

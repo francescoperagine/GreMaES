@@ -1,4 +1,5 @@
 % manifest_section/2
+manifest_section(none, all).
 manifest_section(altered_color, all).
 manifest_section(altered_color, branches).
 manifest_section(altered_color, leaves).

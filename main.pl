@@ -254,6 +254,10 @@ replace(X, Y, [H|T1], [H|T2]) :- % X is not in the first position, do nothing
 
 % diagnosis/0    
 user_diagnosis :-
+    observed_symptoms,
+    all(diagnosis(T, B), (type_body(T, B), observed_symptoms(S), match(B, S)), D),
+    maplist(explain_diagnosis, D).
+user_diagnosis :-
     \+ observed_symptoms,
     message_code(no_symptom, M),
     writeln(M).
@@ -262,10 +266,6 @@ user_diagnosis :-
     \+ (type(X)),
     message_code(no_diagnosis, M),
     writeln(M).
-user_diagnosis :-
-    observed_symptoms,
-    all(diagnosis(T, B), (type_body(T, B), observed_symptoms(S), match(B, S)), D),
-    maplist(explain_diagnosis, D).
 
 % observed_symptoms/0
 observed_symptoms :- symptom(_,_).
@@ -297,6 +297,8 @@ conj_to_list((H, C), [H|T]) :-
     !,
     conj_to_list(C, T).
 conj_to_list(H, [H]).
+
+match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
 % problem_card/4 - The predicate holds when the first argument is a KB 'type' ground atom,
 % and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
