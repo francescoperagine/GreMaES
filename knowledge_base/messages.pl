@@ -20,9 +20,9 @@ goodbye :-
 
 question_code(fruition_mode(user_mode), 'Do you want to perform a diagnosis about the health status of a plant').
 explanation(fruition_mode(user_mode), 'Provide the symptoms that the plant exibits to understand if it\'s affected by any problem and to get eventual treatment instructions').
-question_code(fruition_mode(kb_mode), 'Do you want to browse all the Knowledge Base facts').
+question_code(fruition_mode(kb_mode), 'Do you want to explore all the Knowledge Base facts').
 explanation(fruition_mode(kb_mode), 'Shows all the informations about health problems, symptoms, treatments').
-question_code(fruition_mode(sensor_mode), 'Do you want to enter the sensors\' mode').
+question_code(fruition_mode(sensor_mode), 'Do you want to start the sensors\' mode').
 explanation(fruition_mode(sensor_mode), 'Simulates the use of devices to test the automations of the system').
 question_code(start_again, 'Would you like to run the program again').
 question_code(new_symptom, 'Would you like to register a new symptom').
