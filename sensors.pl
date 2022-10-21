@@ -67,7 +67,7 @@ is_manifestation(X) :-  manifestations(L), member(X, L).
 sampling_init :- 
     random_sensor(D),
     sensor(D, T),
-    sensor_plant(D, P),
+    plant_sensor(P, D),
     sampling(D, T, P).
 
 random_sensor(D) :- 
@@ -230,17 +230,21 @@ range(N, Min, Max, S) :-
 actuator_init(P, T, S, Avg) :- 
     actuator(A, T, S, K),
     plant_actuator(P, A), 
-    actuator_forward(P, A, S, K, Avg).
+    actuator_forward(A, S, K).
 actuator_init(P, T, S, Avg). % if there isn't one, no matter.
 
-actuator_forward(P, A, S, K, Avg) :-
+actuator_forward(A, S, K) :-
     S = normal,
     actuator_off(A),
-    write(' * '), write(K), write(' '), write(A), write(' is off.').
-actuator_forward(P, A, S, K, Avg) :-
+    atomic_concat([' * ', K, ' ', A, ' has been switched off.'], C),
+    writeln(C).
+    % write(), write(K), write(' '), write(A), writeln(' is off.').
+actuator_forward(A, S, K) :-
     S \= normal,
     actuator_on(A),
-    write(' * '), write(K), write(' '), write(A), write(' is on.').
+    atomic_concat([' * ', K, ' ', A, ' has been switched on.'], C),
+    writeln(C).
+    % write(' * '), write(K), write(' '), write(A), writeln(' is on.').
 
 actuator_on(A) :-
     actuator_status(A, off),

@@ -148,7 +148,7 @@ once_again :- askif(new_symptom).
 
 % symptomatology_rule/0
 symptomatology_rule :- 
-    askif(has(manifestation)),
+    % askif(has(manifestation)),
     get_user_choice(manifestations, M),
     assertz(current_manifestation(M)),
     symptomatology_forward(M).
@@ -185,16 +185,18 @@ user_store(S, M, C) :-
 % cleanup_symptomatology/0
 cleanup_symptomatology :- 
     retractall(asked(new_symptom, _)),
-    retractall(asked(has(manifestation), _)),
+    % retractall(asked(has(manifestation), _)),
+    retractall(current_manifestation(_)),
     retractall(asked(has(current_manifestation), _)).
 
 % menu_ask/3 - Menu title T, options' list L, entry name X
 menu_ask(T, L, Y) :-
     menu_with_title(T, L), nl,
     message_code(item_number_no_exit, M),
-    writeln(M), nl,
     read(X),
-    menu_input_handler(L, X, Y).
+    menu_input_handler(L, X, Y),
+    message_code(option_selected, N),
+    write(N), write(X), write(': '), write(Y), nl.
 
 % menu_display/2 - Shows the title and goes ahead with the diplaying part.
 menu_with_title(T, L) :- 
@@ -272,13 +274,21 @@ observed_symptoms :- symptom(_,_).
 observed_symptoms :- symptom(_,_,_).
     
 % explain_diagnosis/1 - X Right side of the type(X) rule, to be checked vs the stored symptoms.
-explain_diagnosis(X) :- 
-    \+ call(X).
+% explain_diagnosis(X) :- 
+%     \+ call(X).
 explain_diagnosis(X) :-
-    X = diagnosis(T, B),
+    X = diagnosis(T, [B]),
+    T \= healthy,
     problem_card(T, A),
-    write('- The diagnosis for '), write(X), write(', is '), write(A), write(', because of '), writeln(B),
+    message_code(diagnosis_of, M),
+    message_code(because_of, N),
+    nl, write(M), write(A), write(N), writeln(B),
     explain_treatment(T), nl.
+explain_diagnosis(X) :-
+    X = diagnosis(T, [B]),
+    T = healthy,
+    message_code(treatment_healthy, M),
+    writeln(M), nl.
 
 % observed_symptoms/1 Unifies S with the aggregated lists of symptoms
 observed_symptoms(S) :- 
@@ -313,16 +323,19 @@ treatment_card(T, L) :- all(A, (treatment(T, D), atomic_concat([T, ': ', D], A))
 % explain_treatment/1
 explain_treatment(X) :-
     class(nutrient_deficiency, X),
-    writeln('Treatment: provide the missing nutrient to the plant.').
+    message_code(missing_nutrient, M),
+    writeln(M).
 explain_treatment(X) :-
     \+ class(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
     bagof(Y, treatment(X, Y), L),
-    writeln('Treatment: '),
+    message_code(treatment, M),
+    writeln(M),
     maplist(writeln, L).
 explain_treatment(X) :-
     \+ class(nutrient_deficiency, X),
     \+ treatment(X),
-    writeln('Treatment: There a no treatments').
+    message_code(treatment_none, M),
+    writeln(M).
 
 % askif/1
 askif(Q) :-

@@ -43,4 +43,11 @@ message_code(appearances, 'How is the problem manifested?').
 message_code(colors, 'What color does it have?').
 message_code(behaviours, 'What is the behaviour?').
 message_code(no_explanation, 'There is no explanation for this.').
+message_code(diagnosis_of, '- The diagnosis is of ').
+message_code(because_of, ', because of ').
 message_code(no_symptom, 'There are no observed symptoms.').
+message_code(option_selected, 'You have selected option n.').
+message_code(missing_nutrient, 'Treatment: provide the missing nutrient to the plant.').
+message_code(treatment, 'Treatment: ').
+message_code(treatment_none, ' -> There a no treatments for this.').
+message_code(treatment_healthy, ' -> The plant is perfectly healthy. There is no treatment to apply.').
