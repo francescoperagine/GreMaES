@@ -38,14 +38,13 @@ message_code(not_recognized_value, 'The selected value was not recognized. Try a
 message_code(yes_or_no, 'Please answer yes or no.').
 message_code(no_problem, 'There is no problem.').
 message_code(no_diagnosis, 'There is no clear diagnosis.').
-message_code(sections, 'What section is affected by the problem?').
-message_code(appearances, 'How is the problem manifested?').
-message_code(colors, 'What color does it have?').
-message_code(behaviours, 'What is the behaviour?').
 message_code(no_explanation, 'There is no explanation for this.').
+message_code(no_symptom, 'There are no observed symptoms.').
+message_code(current_manifest_sections, 'What section is affected by the problem?').
+message_code(manifestations, 'How is the problem manifested?').
+message_code(current_manifest_colors, 'What color does it have?').
 message_code(diagnosis_of, '- The diagnosis is of ').
 message_code(because_of, ', because of ').
-message_code(no_symptom, 'There are no observed symptoms.').
 message_code(option_selected, 'You have selected option n.').
 message_code(missing_nutrient, 'Treatment: provide the missing nutrient to the plant.').
 message_code(treatment, 'Treatment: ').

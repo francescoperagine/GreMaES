@@ -196,7 +196,7 @@ menu_ask(T, L, Y) :-
     read(X),
     menu_input_handler(L, X, Y),
     message_code(option_selected, N),
-    write(N), write(X), write(': '), write(Y), nl.
+    write(N), write(X), write(': '), writeln(Y), nl.
 
 % menu_display/2 - Shows the title and goes ahead with the diplaying part.
 menu_with_title(T, L) :- 
