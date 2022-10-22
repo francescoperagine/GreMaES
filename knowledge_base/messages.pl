@@ -5,8 +5,8 @@ welcome :-
     writeln('If there are any, the software will provide both diagnosis and suggestions about the treatment.'),
     writeln('Ethics & Privacy: no plants were harmed during the tests and no personal informations will be stored nor disclosed.'), nl.
 
-welcome_sensor :-
-    writeln('This is the GreMaES sensor mode.'),
+welcome_monitor :-
+    writeln('This is the GreMaES monitor mode.'),
     writeln('To check out the functionalities of the system, some devices\' readings sampling will be randomly generated.'),
     writeln('Plants hosted in our virtual greenhouse:').
 
@@ -22,11 +22,11 @@ question_code(fruition_mode(user_mode), 'Do you want to perform a diagnosis abou
 explanation(fruition_mode(user_mode), 'Provide the symptoms that the plant exibits to understand if it\'s affected by any problem and to get eventual treatment instructions').
 question_code(fruition_mode(kb_mode), 'Do you want to explore all the Knowledge Base facts').
 explanation(fruition_mode(kb_mode), 'Shows all the informations about health problems, symptoms, treatments').
-question_code(fruition_mode(sensor_mode), 'Do you want to start the sensors\' mode').
-explanation(fruition_mode(sensor_mode), 'Simulates the use of devices to test the automations of the system').
+question_code(fruition_mode(monitor_mode), 'Do you want to start the monitor mode').
+explanation(fruition_mode(monitor_mode), 'Simulates the use of devices to test the automations of the system').
 question_code(start_again, 'Would you like to run the program again').
 question_code(new_symptom, 'Would you like to register a new symptom').
-question_code(continue_time_loop, 'Do you want to continue the sampling').
+question_code(continue_monitor_loop, 'Do you want to continue the sampling').
 
 question_code(view(X), X) :- write('Would you like to browse the ').
 question_code(has(X), X) :- write('Does it have a particular ').
@@ -40,6 +40,8 @@ message_code(no_problem, 'There is no problem.').
 message_code(no_diagnosis, 'There is no clear diagnosis.').
 message_code(no_explanation, 'There is no explanation for this.').
 message_code(no_symptom, 'There are no observed symptoms.').
+message_code(no_actuator, 'There is no actuator ho handle ').
+message_code(no_plant_actuator, 'There is no actuator for plant ').
 message_code(current_manifest_sections, 'What section is affected by the problem?').
 message_code(manifestations, 'How is the problem manifested?').
 message_code(current_manifest_colors, 'What color does it have?').

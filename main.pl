@@ -9,7 +9,7 @@
 :- dynamic symptom/3.
 :- dynamic type/1.
 
-:- [knowledge_base/kb, sensors].
+:- [knowledge_base/kb, monitor_mode].
 
 % start/0
 start :- 
@@ -40,8 +40,8 @@ set_fruition_mode :-
 set_fruition_mode :-
     \+ (user_mode),
     \+ (kb_mode),
-    sensor_mode,
-    sensor_init.
+    monitor_mode,
+    monitor_init.
 
 % restart/0
 restart :- 
@@ -53,7 +53,7 @@ restart :-
 
 user_mode :- askif(fruition_mode(user_mode)).
 kb_mode :- askif(fruition_mode(kb_mode)).
-sensor_mode :- askif(fruition_mode(sensor_mode)).
+monitor_mode :- askif(fruition_mode(monitor_mode)).
 
 % kb_browse/0
 kb_browse :- 
@@ -185,7 +185,6 @@ user_store(S, M, C) :-
 % cleanup_symptomatology/0
 cleanup_symptomatology :- 
     retractall(asked(new_symptom, _)),
-    % retractall(asked(has(manifestation), _)),
     retractall(current_manifestation(_)),
     retractall(asked(has(current_manifestation), _)).
 
@@ -283,7 +282,7 @@ explain_diagnosis(X) :-
     message_code(diagnosis_of, M),
     message_code(because_of, N),
     nl, write(M), write(A), write(N), writeln(B),
-    explain_treatment(T), nl.
+    explain_treatment(T).
 explain_diagnosis(X) :-
     X = diagnosis(T, [B]),
     T = healthy,
@@ -310,7 +309,7 @@ conj_to_list(H, [H]).
 
 match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
-% problem_card/4 - The predicate holds when the first argument is a KB 'type' ground atom,
+% problem_card/2 - The predicate holds when the first argument is a KB 'type' ground atom,
 % and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
 % Type T, health problem H, class C
 problem_card(T, A) :-

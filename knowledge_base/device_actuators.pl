@@ -1,7 +1,7 @@
 % actuator/4
 actuator(act1, temperature, low, thermostat).
 actuator(act2, temperature, high, fan).
-actuator(act2, humidity, low, sprinkler).
+actuator(act3, humidity, low, sprinkler).
 actuator(act4, humidity, high, fan).
 
 % plant_actuator/2

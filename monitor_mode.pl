@@ -5,55 +5,48 @@
 :- dynamic plant_symptom/4.
 :- dynamic diagnosis/3.
 :- dynamic actuator_status/2.
-% :- dynamic log/1.
 
-loop_repetitions(X) :- X is 5.
+loop_repetitions(X) :- X is 10.
 loop_interval(X) :- X is 1.
 reading_variance(X) :- X is 1.2.
 
-% sensor_init/0 - Initialize the sensor mode.
-sensor_init :-
-    sensor_cleanup,
-    welcome_sensor, nl,
+% monitor_init/0 - Initialize the sensor mode.
+monitor_init :-
+    welcome_monitor, nl,
+    monitor_cleanup,
     plants(L),
     maplist(writeln, L), nl,
     loop_init,
-    sensor_diagnosis.
-    % greenhouse_status.
+    monitor_diagnosis,
+    listing(diagnosis).
 
-% sensor_cleanup/0
-sensor_cleanup :-
+% monitor_cleanup/0
+monitor_cleanup :-
     retractall(symptom(_,_)),
     retractall(symptom(_,_,_)),
-    retractall(plant_symptom(_,_,_)),
-    retractall(plant_symptom(_,_,_,_)),
-    retractall(asked(continue_time_loop, _)),
-    retractall(diagnosis(_)),
-    retractall(actuator_status(_, _)).
-    % retractall(log(_)).
-
-% greenhouse_status :-
-
-
+    retractall(asked(continue_monitor_loop,_)),
+    retractall(diagnosis(_,_,_)),
+    retractall(actuator_status(_,_)).
+    
 plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax, _), stage(H, Hmin, Hmax, _)), L).
 
 % loop_init/0
 loop_init :- 
     loop_repetitions(X),
     loop_interval(Y),
-    time_loop(X, Y).
+    monitor_loop(X, Y).
 
-% time_loop/2 - Loops X of duration Y in seconds. For each repetition, simulates a sensor reading.
-time_loop(X, Y) :-
+% monitor_loop/2 - Loops X of duration Y in seconds. For each repetition, simulates a sensor reading.
+monitor_loop(X, Y) :-
     X > 0,
     sampling_init,
-    retractall(asked(continue_time_loop, _)),
+    retractall(asked(continue_monitor_loop, _)),
     sleep(Y),
     X1 is X - 1,
-    time_loop(X1, Y).
-time_loop(X, Y) :-
+    monitor_loop(X1, Y).
+monitor_loop(X, Y) :-
     X = 0,
-    askif(continue_time_loop) -> 
+    askif(continue_monitor_loop) -> 
         loop_init
         ;
         !.
@@ -90,43 +83,26 @@ sampling(D, T, P) :-
     range_value(T, Min, Max),
     MinV is Min / Var,
     MaxV is Max * Var,
-    (T = humidity, MinV < 0, MinV1 = 0 ; MinV1 = MinV),
-    (T = humidity, MaxV > 100, MaxV1 = 100 ; MaxV1 = MaxV),
-    random(MinV, MaxV1, R),
+    (T = humidity, MinV < 0 -> MinV1 = 0 ; MinV1 = MinV),
+    (T = humidity, MaxV > 100 -> MaxV1 = 100 ; MaxV1 = MaxV),
+    random(MinV1, MaxV1, R),
     V is floor(R),
     A = reading(T, V),
-    sampling_output(P, T, D, A).
+    store_reading(P, T, D, A).
 sampling(D, T, P) :-
     T = caption,
     random_predicate_element(manifestations, M),
     caption_forward(M, A),
-    sampling_output(P, T, D, A).
+    store_reading(P, T, D, A).
 
-% sampling_output/4
-sampling_output(P, T, D, A) :-
-    sensor_store(P, A),
+timestamp(T) :- 
     datime(datime(Year, Month, Day, Hour, Minute, Second)),
-    flatten([datetime(Year/Month/Day, Hour:Minute:Second), plant(P), sensor(D, T), A], R),
-    % maplist(log, R),
-    writeln(R).
+    T = datetime(Year/Month/Day, Hour:Minute:Second).
 
-% sensor_store/2
-sensor_store(P, A) :- 
-    A = symptom(S, M, C),
-    manifest_section(M, S),
-    manifest_color(M, C),
-    assertz(symptom(S, M, C)),
-    assertz(plant_symptom(P, S, M, C)).
-sensor_store(P, A) :- 
-    A = symptom(S, M),
-    manifest_section(M, S),
-    assertz(symptom(S, M)),
-    assertz(plant_symptom(P, S, M)).
-sensor_store(P, A) :- 
-    A = reading(T, V),
-    is_sensor_type(T),
-    assertz(reading(T, V)),
-    assertz(plant_reading(P, T, V)).
+store_reading(P, T, D, A) :-
+    X = plant_reading(P, T, D, A),
+    writeln(X),
+    assertz(X).
 
 % range_value/3 Unifies min/max with the respective sensor_type
 range_value(T, Min, Max) :-
@@ -158,58 +134,46 @@ sampling_manifest_section(M, S) :-
     all(X, manifest_section(M, X), L),
     random_list_element(L, S).
 
-% sensor_diagnosis/0
-sensor_diagnosis :- 
-    caption_diagnosis,
-    reading_diagnosis.
-sensor_diagnosis :- 
-    \+ diagnosis(_,_,_),
-    message_code(no_diagnosis, M),
-    writeln(M).
+% monitor_diagnosis/0
+monitor_diagnosis :- caption_diagnosis, !.
+monitor_diagnosis :- reading_diagnosis.
 
-% caption_diagnosis/0
-caption_diagnosis :- 
-    all(diagnosis(P, T, R), (type_body(T, R), observed_diagnosis_body(P, R)), D),
-    maplist(caption_diagnosis_forward, D).
-caption_diagnosis :- \+ type(X).
+caption_diagnosis :-
+    all_plant_captions(C),
+    maplist(monitor_caption_diagnosis, C).
+reading_diagnosis :-
+    all_plant_readings(R),
+    maplist(monitor_reading_diagnosis, R).
 
-% reading_diagnosis/0
-reading_diagnosis :- 
-    all(plant_reading(P, T, V), plant_reading(P, T, V), L),
-    maplist(reading_diagnosis_forward, L).
-reading_diagnosis :- \+ plant_reading(_, _, _).
-
-% caption_diagnosis_forward/1
-caption_diagnosis_forward(X) :-
-    X = diagnosis(P, T, R),
-    assertz(X),
-    \+ is_sensor_type(T),
+monitor_caption_diagnosis(X) :-
+    X = (P, L),
+    maplist(assertz, L),
+    timestamp(TS),
+    clause(type(T), B),
+    conj_to_list(B, R),
+    match(R, L),    % checks if the observed symptoms match any problem
+    Y = diagnosis(P, T, TS),
+    assertz(Y),
+    maplist(retractall, L),
     problem_card(T, A),
-    write('- Plant '), write(P), write(' is affected by '), write(A), write(' because of '), R = [B], writeln(B).
+    write('- Plant '), write(P), write(' is affected by '), write(A), write(' because of '), writeln(B).
+monitor_reading_diagnosis(X) :-
+    X = (P, L),
+    member(Y, L),
+    parse_reading(P, Y).
 
-% reading_diagnosis_forward/1
-reading_diagnosis_forward(X) :-
-    X = plant_reading(P, T, V),
-    plant_range_values(P, T, Min, Max, Avg),
+parse_reading(P, X) :-
+    X = reading(T, V),
+    timestamp(TS),
+    plant_range_values(P, D, Min, Max, Avg),
     range(V, Min, Max, S),
-    write('- Plant '), write(P), write(' reading of '), write(T), write(' is '), writeln(S),
-    assertz(diagnosis(P, T:S, reading(T, V, Min, Max))),
+    write('- Plant '), write(P), write(' reading of '), write(D), write(' is '), writeln(S),
+    assertz(diagnosis(P, T:S, TS)),
     actuator_init(P, T, S, Avg).
 
 % observed_diagnosis_body/2 - unifies P with the plant affected by the symptoms
-observed_diagnosis_body(P, B) :-
-    observed_symptoms(S),
-    match(B, S),
-    member(X, B),
-    plant_by_symptom(P, X).
-
-plant_by_symptom(P, X) :-
-    X = symptom(S, M, C),
-    manifest_color(_, C),
-    plant_symptom(P, S, M, C).
-plant_by_symptom(P, X) :-
-    X = symptom(S, M),
-    plant_symptom(P, S, M).
+all_plant_captions(L) :- all((P, L1), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T = caption), L1)), L).
+all_plant_readings(L) :- all((P, L1), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T \= caption), L1)), L).
 
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
@@ -231,20 +195,29 @@ actuator_init(P, T, S, Avg) :-
     actuator(A, T, S, K),
     plant_actuator(P, A), 
     actuator_forward(A, S, K).
-actuator_init(P, T, S, Avg). % if there isn't one, no matter.
+actuator_init(P, T, S, Avg) :- 
+    actuator(A, T, S, K),
+    \+ plant_actuator(P, A), 
+    message_code(no_plant_actuator, M),
+    atomic_concat([' * ', M, P, ' to handle ', S, ' ', T], C),
+    writeln(C).
+actuator_init(P, T, S, Avg) :-
+    \+ actuator(A, T, S, K),
+    S \= normal,
+    message_code(no_actuator, M),
+    atomic_concat([' * ', M, S, ' ', T], C),
+    writeln(C).
 
 actuator_forward(A, S, K) :-
     S = normal,
     actuator_off(A),
     atomic_concat([' * ', K, ' ', A, ' has been switched off.'], C),
     writeln(C).
-    % write(), write(K), write(' '), write(A), writeln(' is off.').
 actuator_forward(A, S, K) :-
     S \= normal,
     actuator_on(A),
     atomic_concat([' * ', K, ' ', A, ' has been switched on.'], C),
     writeln(C).
-    % write(' * '), write(K), write(' '), write(A), writeln(' is on.').
 
 actuator_on(A) :-
     actuator_status(A, off),
@@ -259,6 +232,3 @@ actuator_off(A) :-
     assertz(actuator_status(A, off)).
 actuator_off(A) :-
     assertz(actuator_status(A, off)).
-    
-
-% log(X). % write to external log file.
