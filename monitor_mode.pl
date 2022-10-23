@@ -1,8 +1,6 @@
 :- use_module(library(system)).
 :- use_module(library(random)).
 
-:- dynamic plant_symptom/3.
-:- dynamic plant_symptom/4.
 :- dynamic diagnosis/3.
 :- dynamic actuator_status/2.
 
@@ -10,24 +8,23 @@ loop_repetitions(X) :- X is 10.
 loop_interval(X) :- X is 1.
 reading_variance(X) :- X is 1.2.
 
-% monitor_init/0 - Initialize the sensor mode.
-monitor_init :-
+% monitor_start/0 - Initialize the sensor mode.
+monitor_start :-
     welcome_monitor, nl,
     monitor_cleanup,
     plants(L),
     maplist(writeln, L), nl,
     loop_init,
-    monitor_diagnosis,
-    listing(diagnosis).
+    monitor_diagnosis.
+    % actuator_start.
 
 % monitor_cleanup/0
 monitor_cleanup :-
-    retractall(symptom(_,_)),
-    retractall(symptom(_,_,_)),
     retractall(asked(continue_monitor_loop,_)),
     retractall(diagnosis(_,_,_)),
     retractall(actuator_status(_,_)).
-    
+
+% plants/1 
 plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax, _), stage(H, Hmin, Hmax, _)), L).
 
 % loop_init/0
@@ -57,20 +54,24 @@ is_sensor_type(X) :- sensor_type(L), member(X, L).
 is_section(X) :- sections(L), member(X, L).
 is_manifestation(X) :-  manifestations(L), member(X, L).
 
+% sampling_init/0
 sampling_init :- 
     random_sensor(D),
     sensor(D, T),
     plant_sensor(P, D),
     sampling(D, T, P).
 
+% random_sensor/1
 random_sensor(D) :- 
     all(X, sensor(X, _), L),
     random_list_element(L, D).
 
+% random_predicate_element/2
 random_predicate_element(P, E) :-
     callable(P),
     call(P, L),
     random_list_element(L, E).
+% random_list_element/2
 random_list_element(L, E) :-
     length(L, N),
     random(0, N, R),
@@ -95,10 +96,12 @@ sampling(D, T, P) :-
     caption_forward(M, A),
     store_reading(P, T, D, A).
 
+% timestamp/1
 timestamp(T) :- 
     datime(datime(Year, Month, Day, Hour, Minute, Second)),
     T = datetime(Year/Month/Day, Hour:Minute:Second).
 
+% store_reading/4
 store_reading(P, T, D, A) :-
     X = plant_reading(P, T, D, A),
     writeln(X),
@@ -135,18 +138,26 @@ sampling_manifest_section(M, S) :-
     random_list_element(L, S).
 
 % monitor_diagnosis/0
-monitor_diagnosis :- caption_diagnosis, !.
-monitor_diagnosis :- reading_diagnosis.
+monitor_diagnosis :- caption_diagnosis, reading_diagnosis.
 
+% caption_diagnosis/0
 caption_diagnosis :-
-    all_plant_captions(C),
-    maplist(monitor_caption_diagnosis, C).
+    all((P, L1), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T = caption), L1)), L),
+    maplist(parse, L).
+% reading_diagnosis/0
 reading_diagnosis :-
-    all_plant_readings(R),
-    maplist(monitor_reading_diagnosis, R).
+    all((P, R), (plant_reading(P, T, D, R), T \= caption), L),
+    maplist(parse, L).
 
-monitor_caption_diagnosis(X) :-
+% is_caption/1
+is_caption(X) :-
+    functor(X, Y, Z),
+    Y = symptom.
+
+% parse/1
+parse(X) :-
     X = (P, L),
+    maplist(is_caption, L),
     maplist(assertz, L),
     timestamp(TS),
     clause(type(T), B),
@@ -156,24 +167,21 @@ monitor_caption_diagnosis(X) :-
     assertz(Y),
     maplist(retractall, L),
     problem_card(T, A),
-    write('- Plant '), write(P), write(' is affected by '), write(A), write(' because of '), writeln(B).
-monitor_reading_diagnosis(X) :-
+    write('- Plant '), write(P), write(' caption diagnosis is '), write(A), write(' because of '), writeln(B).
+parse(X) :-
     X = (P, L),
-    member(Y, L),
-    parse_reading(P, Y).
-
-parse_reading(P, X) :-
-    X = reading(T, V),
+    maplist(is_caption, L),
+    message_code(no_diagnosis, M),
+    write('- Plant caption is '), write(L), write('. '), writeln(M).   
+parse(X) :-
+    X = (P, reading(T, V)),
     timestamp(TS),
-    plant_range_values(P, D, Min, Max, Avg),
-    range(V, Min, Max, S),
-    write('- Plant '), write(P), write(' reading of '), write(D), write(' is '), writeln(S),
-    assertz(diagnosis(P, T:S, TS)),
-    actuator_init(P, T, S, Avg).
-
-% observed_diagnosis_body/2 - unifies P with the plant affected by the symptoms
-all_plant_captions(L) :- all((P, L1), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T = caption), L1)), L).
-all_plant_readings(L) :- all((P, L1), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T \= caption), L1)), L).
+    plant_range_values(P, T, Min, Max, Avg),
+    range_status(V, Min, Max, S),
+    D = diagnosis(P, T:S:V, TS),
+    assertz(D),
+    write('- Plant '), write(P), write(' reading diagnosis is '), writeln(D),
+    actuator_init(P, T:S:Avg). % sets the actuator to bring the value back to the avg
 
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
@@ -183,7 +191,8 @@ plant_range_values(P, T, Hmin, Hmax, Havg) :-
     T = humidity,
     stage(H, Hmin, Hmax, Havg).
 
-range(N, Min, Max, S) :- 
+% range_status/4
+range_status(N, Min, Max, S) :- 
     (N < Min, S = low)
     ;
     (N > Max, S = high)
@@ -191,23 +200,23 @@ range(N, Min, Max, S) :-
     (S = normal).
 
 % actuator_init/3
-actuator_init(P, T, S, Avg) :- 
+actuator_init(P, T:S:Avg) :- 
     actuator(A, T, S, K),
     plant_actuator(P, A), 
     actuator_forward(A, S, K).
-actuator_init(P, T, S, Avg) :- 
+actuator_init(P, T:S:Avg) :- 
     actuator(A, T, S, K),
     \+ plant_actuator(P, A), 
     message_code(no_plant_actuator, M),
     atomic_concat([' * ', M, P, ' to handle ', S, ' ', T], C),
     writeln(C).
-actuator_init(P, T, S, Avg) :-
-    \+ actuator(A, T, S, K),
-    S \= normal,
+actuator_init(P, T:S:Avg) :-
+    \+ actuator(A, T, S, _),
     message_code(no_actuator, M),
     atomic_concat([' * ', M, S, ' ', T], C),
     writeln(C).
 
+% actuator_forward/3
 actuator_forward(A, S, K) :-
     S = normal,
     actuator_off(A),
@@ -219,6 +228,7 @@ actuator_forward(A, S, K) :-
     atomic_concat([' * ', K, ' ', A, ' has been switched on.'], C),
     writeln(C).
 
+% actuator_on/1
 actuator_on(A) :-
     actuator_status(A, off),
     retract(actuator_status(A, off)),
@@ -226,6 +236,7 @@ actuator_on(A) :-
 actuator_on(A) :-
     assertz(actuator_status(A, on)).
 
+% actuator_off/1
 actuator_off(A) :-
     actuator_status(A, on),
     retract(actuator_status(A, on)),

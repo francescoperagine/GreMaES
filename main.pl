@@ -41,7 +41,7 @@ set_fruition_mode :-
     \+ (user_mode),
     \+ (kb_mode),
     monitor_mode,
-    monitor_init.
+    monitor_start.
 
 % restart/0
 restart :- 
@@ -306,6 +306,11 @@ conj_to_list((H, C), [H|T]) :-
     !,
     conj_to_list(C, T).
 conj_to_list(H, [H]).
+
+list_to_conj([H|T], (H, C)) :-
+    !,
+    list_to_conj(T, C).
+list_to_conj([H], H).
 
 match(L1, L2):- forall(member(X, L1), member(X, L2)).
 

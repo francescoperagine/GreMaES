@@ -70,17 +70,3 @@ type(mealy_bugs) :- symptom(all, sticky_honeydew).
 treatment(mealy_bugs, 'poke them off shaking the plant').
 treatment(mealy_bugs, 'spraying with water').
 treatment(mealy_bugs, 'spray with neem oil and insecticidal soap').
-
-
-
-
-
-
-
-
-
-
-
-
-
-
