@@ -40,7 +40,7 @@ message_code(no_problem, 'There is no problem.').
 message_code(no_diagnosis, 'There is no clear diagnosis.').
 message_code(no_explanation, 'There is no explanation for this.').
 message_code(no_symptom, 'There are no observed symptoms.').
-message_code(no_actuator, 'There is no actuator ho handle ').
+message_code(no_actuator, 'There is no suitable actuator for ').
 message_code(no_plant_actuator, 'There is no actuator for plant ').
 message_code(current_manifest_sections, 'What section is affected by the problem?').
 message_code(manifestations, 'How is the problem manifested?').
@@ -49,6 +49,6 @@ message_code(diagnosis_of, '- The diagnosis is of ').
 message_code(because_of, ', because of ').
 message_code(option_selected, 'You have selected option n.').
 message_code(missing_nutrient, 'Treatment: provide the missing nutrient to the plant.').
-message_code(treatment, 'Treatment: ').
+message_code(treatment, '* Treatment: ').
 message_code(treatment_none, ' -> There a no treatments for this.').
 message_code(treatment_healthy, ' -> The plant is perfectly healthy. There is no treatment to apply.').

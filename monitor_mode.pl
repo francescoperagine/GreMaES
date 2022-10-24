@@ -6,7 +6,7 @@
 
 loop_repetitions(X) :- X is 10.
 loop_interval(X) :- X is 1.
-reading_variance(X) :- X is 1.2.
+reading_variability(X) :- X is 1.2.
 
 % monitor_start/0 - Initialize the sensor mode.
 monitor_start :-
@@ -14,21 +14,20 @@ monitor_start :-
     monitor_cleanup,
     plants(L),
     maplist(writeln, L), nl,
-    loop_init,
+    monitor_loop_start,
     monitor_diagnosis.
-    % actuator_start.
 
 % monitor_cleanup/0
 monitor_cleanup :-
-    retractall(asked(continue_monitor_loop,_)),
+    retractall(asked(_,_)),
     retractall(diagnosis(_,_,_)),
     retractall(actuator_status(_,_)).
 
 % plants/1 
 plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax, _), stage(H, Hmin, Hmax, _)), L).
 
-% loop_init/0
-loop_init :- 
+% monitor_loop_start/0
+monitor_loop_start :- 
     loop_repetitions(X),
     loop_interval(Y),
     monitor_loop(X, Y).
@@ -44,33 +43,24 @@ monitor_loop(X, Y) :-
 monitor_loop(X, Y) :-
     X = 0,
     askif(continue_monitor_loop) -> 
-        loop_init
+        monitor_loop_start
         ;
         !.
 
-sensor_type(L) :- all(X, sensor(_, X), L).
-is_color(X) :- colors(L), member(X, L).
-is_sensor_type(X) :- sensor_type(L), member(X, L).
-is_section(X) :- sections(L), member(X, L).
-is_manifestation(X) :-  manifestations(L), member(X, L).
-
 % sampling_init/0
 sampling_init :- 
-    random_sensor(D),
+    all(X, sensor(X, _), L),
+    random_list_element(L, D),
     sensor(D, T),
     plant_sensor(P, D),
     sampling(D, T, P).
-
-% random_sensor/1
-random_sensor(D) :- 
-    all(X, sensor(X, _), L),
-    random_list_element(L, D).
 
 % random_predicate_element/2
 random_predicate_element(P, E) :-
     callable(P),
     call(P, L),
     random_list_element(L, E).
+
 % random_list_element/2
 random_list_element(L, E) :-
     length(L, N),
@@ -80,7 +70,7 @@ random_list_element(L, E) :-
 % sampling/3 :-
 sampling(D, T, P) :-
     T \= caption,
-    reading_variance(Var),
+    reading_variability(Var),
     range_value(T, Min, Max),
     MinV is Min / Var,
     MaxV is Max * Var,
@@ -89,20 +79,15 @@ sampling(D, T, P) :-
     random(MinV1, MaxV1, R),
     V is floor(R),
     A = reading(T, V),
-    store_reading(P, T, D, A).
+    store(P, T, D, A).
 sampling(D, T, P) :-
     T = caption,
     random_predicate_element(manifestations, M),
     caption_forward(M, A),
-    store_reading(P, T, D, A).
+    store(P, T, D, A).
 
-% timestamp/1
-timestamp(T) :- 
-    datime(datime(Year, Month, Day, Hour, Minute, Second)),
-    T = datetime(Year/Month/Day, Hour:Minute:Second).
-
-% store_reading/4
-store_reading(P, T, D, A) :-
+% store/4
+store(P, T, D, A) :-
     X = plant_reading(P, T, D, A),
     writeln(X),
     assertz(X).
@@ -138,16 +123,11 @@ sampling_manifest_section(M, S) :-
     random_list_element(L, S).
 
 % monitor_diagnosis/0
-monitor_diagnosis :- caption_diagnosis, reading_diagnosis.
-
-% caption_diagnosis/0
-caption_diagnosis :-
-    all((P, L1), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T = caption), L1)), L),
-    maplist(parse, L).
-% reading_diagnosis/0
-reading_diagnosis :-
-    all((P, R), (plant_reading(P, T, D, R), T \= caption), L),
-    maplist(parse, L).
+monitor_diagnosis :- 
+    all((P, L), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T = caption), L)), L1),
+    all((P, [R]), (plant_reading(P, T, D, R), T \= caption), L2),
+    append([L1, L2], L3),
+    maplist(parse, L3).
 
 % is_caption/1
 is_caption(X) :-
@@ -174,15 +154,20 @@ parse(X) :-
     message_code(no_diagnosis, M),
     write('- Plant caption is '), write(L), write('. '), writeln(M).   
 parse(X) :-
-    X = (P, reading(T, V)),
+    X = (P, [reading(T, V)]),
     timestamp(TS),
     plant_range_values(P, T, Min, Max, Avg),
     range_status(V, Min, Max, S),
     D = diagnosis(P, T:S:V, TS),
     assertz(D),
-    write('- Plant '), write(P), write(' reading diagnosis is '), writeln(D),
+    write('- Plant '), write(P), write(' reading diagnosis is '), write(T), write(' '), writeln(S),
     actuator_init(P, T:S:Avg). % sets the actuator to bring the value back to the avg
 
+% timestamp/1
+timestamp(T) :- 
+    datime(datime(Year, Month, Day, Hour, Minute, Second)),
+    T = datetime(Year/Month/Day, Hour:Minute:Second).
+    
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
     T = temperature,
@@ -201,45 +186,61 @@ range_status(N, Min, Max, S) :-
 
 % actuator_init/3
 actuator_init(P, T:S:Avg) :- 
-    actuator(A, T, S, K),
     plant_actuator(P, A), 
+    actuator(A, T, S, K),
     actuator_forward(A, S, K).
 actuator_init(P, T:S:Avg) :- 
-    actuator(A, T, S, K),
     \+ plant_actuator(P, A), 
     message_code(no_plant_actuator, M),
-    atomic_concat([' * ', M, P, ' to handle ', S, ' ', T], C),
+    atomic_concat([' * ', M, P], C),
+    writeln(C).
+actuator_init(P, T:S:Avg) :- 
+    \+ plant_actuator(P, A), 
+    S = normal,
+    atomic_concat([' * Plant ', P, ' ', T, ' is ', S], C),
     writeln(C).
 actuator_init(P, T:S:Avg) :-
+    plant_actuator(P, A),
     \+ actuator(A, T, S, _),
+    S \= normal,
     message_code(no_actuator, M),
-    atomic_concat([' * ', M, S, ' ', T], C),
+    atomic_concat([' * ', M, T], C),
     writeln(C).
 
 % actuator_forward/3
 actuator_forward(A, S, K) :-
     S = normal,
+    actuator_status(A, on),
     actuator_off(A),
-    atomic_concat([' * ', K, ' ', A, ' has been switched off.'], C),
+    atomic_concat([' * ', K, ' ', A, ' is off.'], C),
+    writeln(C).
+actuator_forward(A, S, K) :-
+    S = normal,
+    \+ (actuator_status(A, on)),
+    atomic_concat([' * ', K, ' ', A, ' is already off.'], C),
     writeln(C).
 actuator_forward(A, S, K) :-
     S \= normal,
+    \+ (actuator_status(A, on)),
     actuator_on(A),
-    atomic_concat([' * ', K, ' ', A, ' has been switched on.'], C),
+    atomic_concat([' * ', K, ' ', A, ' is on.'], C),
+    writeln(C).
+actuator_forward(A, S, K) :-
+    S \= normal,
+    actuator_status(A, on),
+    atomic_concat([' * ', K, ' ', A, ' is already on.'], C),
     writeln(C).
 
 % actuator_on/1
 actuator_on(A) :-
-    actuator_status(A, off),
     retract(actuator_status(A, off)),
     assertz(actuator_status(A, on)).
-actuator_on(A) :-
+actuator_on(A) :- 
     assertz(actuator_status(A, on)).
 
 % actuator_off/1
 actuator_off(A) :-
-    actuator_status(A, on),
     retract(actuator_status(A, on)),
     assertz(actuator_status(A, off)).
-actuator_off(A) :-
+actuator_off(A) :- 
     assertz(actuator_status(A, off)).
