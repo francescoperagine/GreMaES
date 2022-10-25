@@ -15,7 +15,6 @@ monitor_start :-
     plants(L),
     maplist(writeln, L), nl,
     monitor_loop_start.
-    % monitor_diagnosis.
 
 % monitor_cleanup/0
 monitor_cleanup :-
@@ -127,10 +126,11 @@ sampling_manifest_section(M, S) :-
 
 % monitor_diagnosis/0
 monitor_diagnosis :- 
-    all((P, L), (plant(P, _, _), all(A, (plant_reading(P, T, _, A), T = caption), L)), L),
+    all((TS, P, L), (plant(P, _, _), timestamp(TS), all(A, (plant_reading(P, T, _, A), T = caption), L)), L),
     monitor_forward(L).
 monitor_diagnosis :- 
-    all((P, [R]), (plant_reading(P, T, D, R), T \= caption), L),
+    all((TS, P, [R]), (plant_reading(P, T, D, R), timestamp(TS), T \= caption), L),
+    maplist(writeln, L),
     monitor_forward(L).
     
 monitor_forward(L) :- 
@@ -144,10 +144,9 @@ is_caption(X) :-
 
 % parse/1
 parse(X) :-
-    X = (P, L),
+    X = (TS, P, L),
     maplist(is_caption, L),
     maplist(assertz, L),
-    timestamp(TS),
     clause(type(T), B),
     conj_to_list(B, R),
     match(R, L),    % checks if the observed symptoms match any problem
@@ -155,30 +154,28 @@ parse(X) :-
     assertz(Y),
     maplist(retractall, L),
     problem_card(T, A),
-    write('Plant '), write(P), write(' caption diagnosis is '), write(A), write(' because of '), writeln(B), nl.
+    write('- Plant '), write(P), write(' caption diagnosis is '), write(A), write(' because of '), writeln(B),
+    lognl((TS, P, caption, L, A)).
 parse(X) :-
-    X = (P, L),
+    X = (TS, P, L),
     maplist(is_caption, L),
     message_code(no_diagnosis, M),
-    % atomic_concat(['- Plant caption is ', L, '. ', M], C),
-    % to_new_line(C).
-    write('- Plant caption is '), write(L), write('. '), writeln(M), nl. 
+    write('- Plant caption is '), write(L), write('. '), writeln(M),
+    lognl((TS, P, caption, L, no_diagnosis)). 
 parse(X) :-
-    X = (P, [reading(T, V)]),
-    timestamp(TS),
+    X = (TS, P, [reading(T, V)]),
     plant_range_values(P, T, Min, Max, Avg),
     range_status(V, Min, Max, S),
     D = diagnosis(P, T:S:V, TS),
     assertz(D),
-    % atomic_concat(['- Plant ', P, ' reading diagnosis is ', T, ' ', S], C),
-    % to_new_line(C),
     write('- Plant '), write(P), write(' reading diagnosis is '), write(T), write(' '), writeln(S),
+    lognl((TS, P, T, V, S)),
     actuator_init(P, T:S:Avg). % sets the actuator to bring the value back to the avg
 
 % timestamp/1
 timestamp(T) :- 
     datime(datime(Year, Month, Day, Hour, Minute, Second)),
-    T = datetime(Year/Month/Day, Hour:Minute:Second).
+    T = ts(Year-Month-Day, Hour:Minute:Second).
     
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
@@ -200,31 +197,33 @@ range_status(N, Min, Max, S) :-
 actuator_init(P, T:S:Avg) :- 
     plant_actuator(P, A), 
     actuator(A, T, S, K),
-    actuator_forward(A, S, K).
+    actuator_forward(A, S, K),
+    log((T, A, K)).
 actuator_init(P, T:S:Avg) :- 
     \+ plant_actuator(P, A), 
+    S \= normal,
     message_code(no_plant_actuator, M),
     atomic_concat([' * ', M, P], C),
-    writeln(C).
+    writeln(C),
+    log(no_plant_actuator).
 actuator_init(P, T:S:Avg) :- 
     \+ plant_actuator(P, A), 
     S = normal,
     atomic_concat([' * Plant ', P, ' ', T, ' is ', S], C),
-    writeln(C).
+    writeln(C),
+    log(no_plant_actuator).
 actuator_init(P, T:S:Avg) :-
     plant_actuator(P, A),
     \+ actuator(A, T, S, _),
     S \= normal,
     message_code(no_actuator, M),
     atomic_concat([' * ', M, T], C),
-    writeln(C).
+    writeln(C),
+    log(no_actuator).
 actuator_init(P, T:S:Avg) :-
     plant_actuator(P, A),
     \+ actuator(A, T, S, _),
     S = normal.
-    % message_code(no_actuator, M),
-    % atomic_concat([' * ', M, T], C),
-    % writeln(C).
 
 % actuator_forward/3
 actuator_forward(A, S, K) :-
@@ -232,23 +231,27 @@ actuator_forward(A, S, K) :-
     actuator_status(A, on),
     actuator_off(A),
     atomic_concat([' * ', K, ' ', A, ' is off.'], C),
-    writeln(C).
+    writeln(C),
+    log(switched_off).
 actuator_forward(A, S, K) :-
     S = normal,
     \+ (actuator_status(A, on)),
     atomic_concat([' * ', K, ' ', A, ' is already off.'], C),
-    writeln(C).
+    writeln(C),
+    log(already_off).
 actuator_forward(A, S, K) :-
     S \= normal,
     \+ (actuator_status(A, on)),
     actuator_on(A),
     atomic_concat([' * ', K, ' ', A, ' is on.'], C),
-    writeln(C).
+    writeln(C),
+    log(switched_on).
 actuator_forward(A, S, K) :-
     S \= normal,
     actuator_status(A, on),
     atomic_concat([' * ', K, ' ', A, ' is already on.'], C),
-    writeln(C).
+    writeln(C),
+    log(already_on).
 
 % actuator_on/1
 actuator_on(A) :-
@@ -263,3 +266,14 @@ actuator_off(A) :-
     assertz(actuator_status(A, off)).
 actuator_off(A) :- 
     assertz(actuator_status(A, off)).
+
+lognl(X) :-
+    open('GreMaES.log', append, Logfile),
+    nl(Logfile),
+    write(Logfile, X),
+    write(Logfile, ','),
+    close(Logfile).
+log(X) :- 
+    open('GreMaES.log', append, Logfile),
+    write(Logfile, X),
+    close(Logfile).
