@@ -14,12 +14,14 @@ monitor_start :-
     monitor_cleanup,
     plants(L),
     maplist(writeln, L), nl,
-    monitor_loop_start,
-    monitor_diagnosis.
+    monitor_loop_start.
+    % monitor_diagnosis.
 
 % monitor_cleanup/0
 monitor_cleanup :-
     retractall(asked(_,_)),
+    retractall(symptom(_,_)),
+    retractall(symptom(_,_,_)),
     retractall(diagnosis(_,_,_)),
     retractall(actuator_status(_,_)).
 
@@ -53,7 +55,8 @@ sampling_init :-
     random_list_element(L, D),
     sensor(D, T),
     plant_sensor(P, D),
-    sampling(D, T, P).
+    sampling(D, T, P),
+    monitor_diagnosis.
 
 % random_predicate_element/2
 random_predicate_element(P, E) :-
@@ -89,7 +92,7 @@ sampling(D, T, P) :-
 % store/4
 store(P, T, D, A) :-
     X = plant_reading(P, T, D, A),
-    writeln(X),
+    nl, writeln(X),
     assertz(X).
 
 % range_value/3 Unifies min/max with the respective sensor_type
@@ -124,10 +127,15 @@ sampling_manifest_section(M, S) :-
 
 % monitor_diagnosis/0
 monitor_diagnosis :- 
-    all((P, L), (plant(P,_,_), all(A, (plant_reading(P, T, _, A), T = caption), L)), L1),
-    all((P, [R]), (plant_reading(P, T, D, R), T \= caption), L2),
-    append([L1, L2], L3),
-    maplist(parse, L3).
+    all((P, L), (plant(P, _, _), all(A, (plant_reading(P, T, _, A), T = caption), L)), L),
+    monitor_forward(L).
+monitor_diagnosis :- 
+    all((P, [R]), (plant_reading(P, T, D, R), T \= caption), L),
+    monitor_forward(L).
+    
+monitor_forward(L) :- 
+    retract(plant_reading(_,_,_,_)),
+    maplist(parse, L).
 
 % is_caption/1
 is_caption(X) :-
@@ -147,12 +155,14 @@ parse(X) :-
     assertz(Y),
     maplist(retractall, L),
     problem_card(T, A),
-    write('- Plant '), write(P), write(' caption diagnosis is '), write(A), write(' because of '), writeln(B).
+    write('Plant '), write(P), write(' caption diagnosis is '), write(A), write(' because of '), writeln(B), nl.
 parse(X) :-
     X = (P, L),
     maplist(is_caption, L),
     message_code(no_diagnosis, M),
-    write('- Plant caption is '), write(L), write('. '), writeln(M).   
+    % atomic_concat(['- Plant caption is ', L, '. ', M], C),
+    % to_new_line(C).
+    write('- Plant caption is '), write(L), write('. '), writeln(M), nl. 
 parse(X) :-
     X = (P, [reading(T, V)]),
     timestamp(TS),
@@ -160,6 +170,8 @@ parse(X) :-
     range_status(V, Min, Max, S),
     D = diagnosis(P, T:S:V, TS),
     assertz(D),
+    % atomic_concat(['- Plant ', P, ' reading diagnosis is ', T, ' ', S], C),
+    % to_new_line(C),
     write('- Plant '), write(P), write(' reading diagnosis is '), write(T), write(' '), writeln(S),
     actuator_init(P, T:S:Avg). % sets the actuator to bring the value back to the avg
 
@@ -206,6 +218,13 @@ actuator_init(P, T:S:Avg) :-
     message_code(no_actuator, M),
     atomic_concat([' * ', M, T], C),
     writeln(C).
+actuator_init(P, T:S:Avg) :-
+    plant_actuator(P, A),
+    \+ actuator(A, T, S, _),
+    S = normal.
+    % message_code(no_actuator, M),
+    % atomic_concat([' * ', M, T], C),
+    % writeln(C).
 
 % actuator_forward/3
 actuator_forward(A, S, K) :-
