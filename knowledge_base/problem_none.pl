@@ -1,3 +1,5 @@
 health_problem(none, healthy).
 
-type(healthy) :- symptom(all, none).
+class(healthy, no_problem).
+
+type(no_problem) :- symptom(all, none).

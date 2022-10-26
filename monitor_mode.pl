@@ -12,9 +12,14 @@ reading_variability(X) :- X is 1.2.
 monitor_start :-
     welcome_monitor, nl,
     monitor_cleanup,
+    actuator_init,
     plants(L),
     maplist(writeln, L), nl,
     monitor_loop_start.
+
+actuator_init :-
+    all(actuator_status(A, off), plant_actuator(P, A), L),
+    maplist(assertz, L).
 
 % monitor_cleanup/0
 monitor_cleanup :-
@@ -25,7 +30,7 @@ monitor_cleanup :-
     retractall(actuator_status(_,_)).
 
 % plants/1 
-plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax, _), stage(H, Hmin, Hmax, _)), L).
+plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species_temperature(S, Tmin, Tmax), stage_humidity(H, Hmin, Hmax)), L).
 
 % monitor_loop_start/0
 monitor_loop_start :- 
@@ -36,7 +41,7 @@ monitor_loop_start :-
 % monitor_loop/2 - Loops X of duration Y in seconds. For each repetition, simulates a sensor reading.
 monitor_loop(X, Y) :-
     X > 0,
-    sampling_init,
+    sampling_start,
     retractall(asked(continue_monitor_loop, _)),
     sleep(Y),
     X1 is X - 1,
@@ -48,14 +53,14 @@ monitor_loop(X, Y) :-
         ;
         !.
 
-% sampling_init/0
-sampling_init :- 
+% sampling_start/0
+sampling_start :- 
     all(X, sensor(X, _), L),
     random_list_element(L, D),
     sensor(D, T),
     plant_sensor(P, D),
     sampling(D, T, P),
-    monitor_diagnosis.
+    parsing_start.
 
 % random_predicate_element/2
 random_predicate_element(P, E) :-
@@ -97,14 +102,14 @@ store(P, T, D, A) :-
 % range_value/3 Unifies min/max with the respective sensor_type
 range_value(T, Min, Max) :-
     T = temperature,
-    all(Tmin, species(_, Tmin, _, _), TminL),
-    all(Tmax, species(_, _, Tmax, _), TmaxL),
+    all(Tmin, species_temperature(_, Tmin, _), TminL),
+    all(Tmax, species_temperature(_, _, Tmax), TmaxL),
     min_list(TminL, Min),
     max_list(TmaxL, Max).
 range_value(T, Min, Max) :-
     T = humidity,
-    all(Hmin, stage(_, Hmin, _, _), HminL),
-    all(Hmax, stage(_, _, Hmax, _), HmaxL),
+    all(Hmin, stage_humidity(_, Hmin, _), HminL),
+    all(Hmax, stage_humidity(_, _, Hmax), HmaxL),
     min_list(HminL, Min),
     max_list(HmaxL, Max).
 
@@ -124,16 +129,16 @@ sampling_manifest_section(M, S) :-
     all(X, manifest_section(M, X), L),
     random_list_element(L, S).
 
-% monitor_diagnosis/0
-monitor_diagnosis :- 
+% parsing_start/0
+parsing_start :- 
     all((TS, P, L), (plant(P, _, _), timestamp(TS), all(A, (plant_reading(P, T, _, A), T = caption), L)), L),
-    monitor_forward(L).
-monitor_diagnosis :- 
+    parsing_readings(L).
+parsing_start :- 
     all((TS, P, [R]), (plant_reading(P, T, D, R), timestamp(TS), T \= caption), L),
-    maplist(writeln, L),
-    monitor_forward(L).
+    parsing_readings(L).
     
-monitor_forward(L) :- 
+% parsing_readings/1
+parsing_readings(L) :- 
     retract(plant_reading(_,_,_,_)),
     maplist(parse, L).
 
@@ -170,7 +175,7 @@ parse(X) :-
     assertz(D),
     write('- Plant '), write(P), write(' reading diagnosis is '), write(T), write(' '), writeln(S),
     lognl((TS, P, T, V, S)),
-    actuator_init(P, T:S:Avg). % sets the actuator to bring the value back to the avg
+    actuator_start(P, T, S).
 
 % timestamp/1
 timestamp(T) :- 
@@ -180,10 +185,12 @@ timestamp(T) :-
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
     T = temperature,
-    species(S, Tmin, Tmax, Tavg).
+    species_temperature(S, Tmin, Tmax),
+    Tavg is (Tmin + Tmax) /2.
 plant_range_values(P, T, Hmin, Hmax, Havg) :-
     T = humidity,
-    stage(H, Hmin, Hmax, Havg).
+    stage_humidity(H, Hmin, Hmax),
+    Havg is (Hmin + Hmax) /2.
 
 % range_status/4
 range_status(N, Min, Max, S) :- 
@@ -193,86 +200,84 @@ range_status(N, Min, Max, S) :-
     ;
     (S = normal).
 
-% actuator_init/3
-actuator_init(P, T:S:Avg) :- 
-    plant_actuator(P, A), 
-    actuator(A, T, S, K),
-    actuator_forward(A, S, K),
-    log((T, A, K)).
-actuator_init(P, T:S:Avg) :- 
-    \+ plant_actuator(P, A), 
-    S \= normal,
-    message_code(no_plant_actuator, M),
-    atomic_concat([' * ', M, P], C),
-    writeln(C),
+% actuator_start/3
+actuator_start(P, T, S) :-
+    all(p_actuator(A, T, S, K, H), (plant_actuator(P, A), actuator(A, T, H, K)), L),
+    maplist(actuator_forward, L).
+actuator_start(P, T, S) :-
+    \+ plant_actuator(P, A),
+    writeln(no_plant_actuator),
     log(no_plant_actuator).
-actuator_init(P, T:S:Avg) :- 
-    \+ plant_actuator(P, A), 
-    S = normal,
-    atomic_concat([' * Plant ', P, ' ', T, ' is ', S], C),
-    writeln(C),
-    log(no_plant_actuator).
-actuator_init(P, T:S:Avg) :-
+actuator_start(P, T, S) :- 
     plant_actuator(P, A),
-    \+ actuator(A, T, S, _),
-    S \= normal,
-    message_code(no_actuator, M),
-    atomic_concat([' * ', M, T], C),
-    writeln(C),
-    log(no_actuator).
-actuator_init(P, T:S:Avg) :-
-    plant_actuator(P, A),
-    \+ actuator(A, T, S, _),
-    S = normal.
+    \+ actuator(A, T, H, K),
+    writeln(no_type_actuator),
+    log(no_type_actuator).
 
-% actuator_forward/3
-actuator_forward(A, S, K) :-
-    S = normal,
+% actuator_forward/1
+actuator_forward(X) :-
+    X = p_actuator(A, T, S, K, H),
+    log((A, K, H )),
+    actuator_activate(A, T, S, K, H).
+
+% actuator_activate/5
+actuator_activate(A, T, S, K, H) :-
+    (S = normal ; S \= H),
     actuator_status(A, on),
     actuator_off(A),
-    atomic_concat([' * ', K, ' ', A, ' is off.'], C),
+    atomic_concat([' * ', K, ' ', A, ' ', turned_off], C),
     writeln(C),
-    log(switched_off).
-actuator_forward(A, S, K) :-
-    S = normal,
-    \+ (actuator_status(A, on)),
-    atomic_concat([' * ', K, ' ', A, ' is already off.'], C),
+    log(-turned_off).  
+actuator_activate(A, T, S, K, H) :-
+    (S = normal ; S \= H),
+    actuator_status(A, off),
+    atomic_concat([' * ', K, ' ', A, ' ', already_off], C),
     writeln(C),
-    log(already_off).
-actuator_forward(A, S, K) :-
+    log(-already_off).
+actuator_activate(A, T, S, K, H) :-
     S \= normal,
-    \+ (actuator_status(A, on)),
+    S = H,
+    actuator_status(A, off),
     actuator_on(A),
-    atomic_concat([' * ', K, ' ', A, ' is on.'], C),
+    atomic_concat([' * ', K, ' ', A, ' ', turned_on], C),
     writeln(C),
-    log(switched_on).
-actuator_forward(A, S, K) :-
+    log(-turned_on).
+actuator_activate(A, T, S, K, H) :-
     S \= normal,
+    S = H,
     actuator_status(A, on),
-    atomic_concat([' * ', K, ' ', A, ' is already on.'], C),
+    atomic_concat([' * ', K, ' ', A, ' ', already_on], C),
     writeln(C),
-    log(already_on).
+    log(-already_on).
+% awry backup
+actuator_activate(A, T, H, K, S) :-
+    X = p_actuator(A, T, H, K, S),
+    write((A, T, H, K, S)),
+    writeln(something_went_awry),
+    log(something_went_awry).
 
 % actuator_on/1
 actuator_on(A) :-
-    retract(actuator_status(A, off)),
+    retract(actuator_status(A, _)),
     assertz(actuator_status(A, on)).
 actuator_on(A) :- 
     assertz(actuator_status(A, on)).
 
 % actuator_off/1
 actuator_off(A) :-
-    retract(actuator_status(A, on)),
+    retract(actuator_status(A, _)),
     assertz(actuator_status(A, off)).
 actuator_off(A) :- 
     assertz(actuator_status(A, off)).
 
+% lognl/1
 lognl(X) :-
     open('GreMaES.log', append, Logfile),
     nl(Logfile),
     write(Logfile, X),
     write(Logfile, ','),
     close(Logfile).
+% log/1
 log(X) :- 
     open('GreMaES.log', append, Logfile),
     write(Logfile, X),

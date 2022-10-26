@@ -69,11 +69,44 @@ match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
 % problem_card/2 - The predicate holds when the first argument is a KB 'type' ground atom,
 % and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
-% Type T, health problem H, class C
 problem_card(T, A) :-
     class(C, T),
     health_problem(H, C),
-    atomic_concat([H, ' problem, ', T, ' ', C], A).
+    atomic_concat([H, ' - ', T, ' ', C], A).
+
+diagnosis(X, L) :- all((X,Y), (plant(X,_,_), diagnosis(X,Y,_)), L).
+
+wet(X) :-
+    plant(X,_,_),
+    diagnosis(X,Y,_),
+    Y = H:S:V,
+    H = humidity,
+    S = high.
+all_wet(L) :- all(X, wet(X), L).
+
+dry(X) :-
+    plant(X,_,_),
+    diagnosis(X,Y,_),
+    Y = H:S:V,
+    H = humidity,
+    S = low.
+all_dry(L) :- all(X, dry(X), L).
+
+hot(X) :-
+    plant(X,_,_),
+    diagnosis(X,Y,_),
+    Y = T:S:V,
+    T = temperature,
+    S = high.
+all_hot(L) :- all(X, hot(X), L).
+
+cold(X) :-
+    plant(X,_,_),
+    diagnosis(X,Y,_),
+    Y = T:S:V,
+    T = temperature,
+    S = low.
+all_cold(L) :- all(X, cold(X), L).
 
 % askif/1
 askif(Q) :-
