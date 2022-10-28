@@ -13,7 +13,7 @@ kb_browse(X) :-
 
 % health_problems/1
 health_problems(L1) :- 
-    all(T, (class(C, T), C \= healthy), L),
+    all(T, (problem_type(C, T), C \= healthy), L),
     maplist(problem_card, L, L1).
 
 % sections/1
@@ -23,7 +23,7 @@ sections(L) :- all(S, sign_section(_, S), L).
 colors(L) :- all(C, sign_color(_, C), L).
 
 % rules/
-rules(L) :- all((P, X, R), (class(P, X), clause(type(X), R)), L).
+rules(L) :- all((P, X, R), (problem_type(P, X), clause(type(X), R)), L).
 
 % browse/1
 browse(X) :-
