@@ -53,7 +53,7 @@ monitor_cleanup :-
     retractall(actuator_status(_,_)).
 
 % plants/1 
-plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species_temperature(S, Tmin, Tmax), stage_humidity(H, Hmin, Hmax)), L).
+plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species_temperature(S, Tmin, Tmax), growth_stage(H, Hmin, Hmax)), L).
 
 % monitor_loop_start/0
 monitor_loop_start :- 
@@ -131,8 +131,8 @@ range_value(T, Min, Max) :-
     max_list(TmaxL, Max).
 range_value(T, Min, Max) :-
     T = humidity,
-    all(Hmin, stage_humidity(_, Hmin, _), HminL),
-    all(Hmax, stage_humidity(_, _, Hmax), HmaxL),
+    all(Hmin, growth_stage(_, Hmin, _), HminL),
+    all(Hmax, growth_stage(_, _, Hmax), HmaxL),
     min_list(HminL, Min),
     max_list(HmaxL, Max).
 
@@ -214,7 +214,7 @@ plant_range_values(P, T, Tmin, Tmax, Tavg) :-
     Tavg is (Tmin + Tmax) /2.
 plant_range_values(P, T, Hmin, Hmax, Havg) :-
     T = humidity,
-    stage_humidity(H, Hmin, Hmax),
+    growth_stage(H, Hmin, Hmax),
     Havg is (Hmin + Hmax) /2.
 
 % range_status/4
