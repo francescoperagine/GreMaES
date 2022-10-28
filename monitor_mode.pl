@@ -112,7 +112,7 @@ sampling(D, T, P) :-
     store(P, T, D, A).
 sampling(D, T, P) :-
     T = caption,
-    random_predicate_element(manifestations, M),
+    random_predicate_element(signs, M),
     caption_forward(M, A),
     store(P, T, D, A).
 
@@ -138,18 +138,18 @@ range_value(T, Min, Max) :-
 
 % caption_forward/2
 caption_forward(M, A) :-
-    \+ manifest_color(M, _),
-    sampling_manifest_section(M, S),
+    \+ sign_color(M, _),
+    sampling_sign_section(M, S),
     A = symptom(S, M).
 caption_forward(M, A) :-
-    all(X, manifest_color(M, X), L),
+    all(X, sign_color(M, X), L),
     random_list_element(L, C),
-    sampling_manifest_section(M, S),
+    sampling_sign_section(M, S),
     A = symptom(S, M, C).
 
-% sampling_manifest_section/2 - Unifies S with a random section related to the manifestation
-sampling_manifest_section(M, S) :- 
-    all(X, manifest_section(M, X), L),
+% sampling_sign_section/2 - Unifies S with a random section related to the sign
+sampling_sign_section(M, S) :- 
+    all(X, sign_section(M, X), L),
     random_list_element(L, S).
 
 % parsing_start/0

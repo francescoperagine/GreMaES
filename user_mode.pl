@@ -13,27 +13,27 @@ once_again :- askif(new_symptom).
 
 % get_symptom/0
 get_symptom :- 
-    get_user_choice(manifestations, M),
-    assertz(current_manifestation(M)),
+    get_user_choice(signs, M),
+    assertz(current_sign(M)),
     symptomatology_forward,
     symptomatology_cleanup.
 
 % symptomatology_cleanup/0
 symptomatology_cleanup :- 
     retractall(asked(_, _)),
-    retractall(current_manifestation(_)).
+    retractall(current_sign(_)).
     
 % symptomatology_forward/0
 symptomatology_forward :-
-    current_manifestation(M),
-    \+ manifest_color(M, _),
-    get_user_choice(current_manifestation_sections, S),
+    current_sign(M),
+    \+ sign_color(M, _),
+    get_user_choice(current_sign_sections, S),
     assertz(symptom(S, M)).
 symptomatology_forward :-
-    current_manifestation(M),
-    manifest_color(M, _),
-    get_user_choice(current_manifest_colors, C), 
-    get_user_choice(current_manifestation_sections, S),
+    current_sign(M),
+    sign_color(M, _),
+    get_user_choice(current_sign_colors, C), 
+    get_user_choice(current_sign_sections, S),
     assertz(symptom(S, M, C)).
 
 % get_user_choice/2
@@ -42,18 +42,18 @@ get_user_choice(X, Y) :-
     call(X, L), 
     menu_ask(X, L, Y).
 
-% current_manifestation_sections/2
-current_manifestation_sections(L) :-
-    current_manifestation(M),
-    all(S, manifest_section(M, S), L).
+% current_sign_sections/2
+current_sign_sections(L) :-
+    current_sign(M),
+    all(S, sign_section(M, S), L).
 
-% current_manifest_colors/2
-current_manifest_colors(L) :- 
-    current_manifestation(M),
-    all(C, manifest_color(M, C), L).
+% current_sign_colors/2
+current_sign_colors(L) :- 
+    current_sign(M),
+    all(C, sign_color(M, C), L).
 
-% Progressive building of the manifested symptom.
-% Each symptom manifested on a section, and may have an appereance, an appereance with a color or a behaviour.
+% Progressive building of the signed symptom.
+% Each symptom signed on a section, and may have an appereance, an appereance with a color or a behaviour.
 
 % menu_ask/3 - Menu title T, options' list L, entry name X
 menu_ask(T, L, Y) :-

@@ -54,8 +54,8 @@ user_mode :- askif(fruition_mode(user_mode)).
 kb_mode :- askif(fruition_mode(kb_mode)).
 monitor_mode :- askif(fruition_mode(monitor_mode)).
 
-% manifestations/1
-manifestations(L) :- all(M, manifest_section(M, S), L).
+% signs/1
+signs(L) :- all(M, sign_section(M, S), L).
 
 % treatments/1
 treatments(L2) :- 

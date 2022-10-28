@@ -1,6 +1,6 @@
 % kb_start/0
 kb_start :- 
-    L = [health_problems, sections, manifestations, colors, treatments, rules],
+    L = [health_problems, sections, signs, colors, treatments, rules],
     maplist(kb_browse, L).
 
 % kb_browse/1
@@ -17,10 +17,10 @@ health_problems(L1) :-
     maplist(problem_card, L, L1).
 
 % sections/1
-sections(L) :- all(S, manifest_section(_, S), L).
+sections(L) :- all(S, sign_section(_, S), L).
 
 % colors/1
-colors(L) :- all(C, manifest_color(_, C), L).
+colors(L) :- all(C, sign_color(_, C), L).
 
 % rules/
 rules(L) :- all((P, X, R), (class(P, X), clause(type(X), R)), L).
