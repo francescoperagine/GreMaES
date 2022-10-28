@@ -1,5 +1,5 @@
 health_problem(none, healthy).
 
-problem_type(healthy, no_problem).
+problem_condition(healthy, no_problem).
 
-type(no_problem) :- symptom(all, none).
+condition(no_problem) :- symptom(all, none).

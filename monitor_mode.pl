@@ -24,7 +24,7 @@ monitor_start :-
 greenhouse_init :-
     health_problem(none, C),
     timestamp(TS),
-    problem_type(C, T),
+    problem_condition(C, T),
     all(health_status(P, TS, C, T), plant(P,_,_), L),
     maplist(assertz, L).
 
@@ -177,7 +177,7 @@ parse(X) :-
     X = (TS, P, L),
     maplist(is_caption, L),
     maplist(assertz, L),
-    clause(type(T), B),
+    clause(condition(T), B),
     conj_to_list(B, R),
     match(R, L),    % checks if the observed symptoms match any problem
     Y = diagnosis(P, T, TS),

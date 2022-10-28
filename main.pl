@@ -7,7 +7,7 @@
 :- dynamic current_section/1.
 :- dynamic symptom/2.
 :- dynamic symptom/3.
-:- dynamic type/1.
+:- dynamic condition/1.
 
 :- [knowledge_base/kb, user_mode, kb_mode, monitor_mode].
 
@@ -69,13 +69,13 @@ match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
 diagnosis(X, L) :- all((X,Y), (plant(X,_,_), diagnosis(X,Y,_)), L).
 
-% problem_card/3 - The predicate holds when the first argument is a KB 'type' ground atom,
-% and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
+% problem_card/3
 problem_card(T, H, C) :-
-    problem_type(C, T),
+    problem_condition(C, T),
     health_problem(H, C).
+%  problem_card/2
 problem_card(T, A) :-
-    problem_type(C, T),
+    problem_condition(C, T),
     health_problem(H, C),
     atomic_concat([H, ' problem, ',T, ' ', C], A).
 

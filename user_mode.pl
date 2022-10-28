@@ -110,7 +110,7 @@ user_diagnosis :-
     writeln(M).
 user_diagnosis :-
     observed_symptoms,
-    \+ (type(X)),
+    \+ (condition(X)),
     message_code(no_diagnosis, M),
     writeln(M).
 
@@ -118,7 +118,7 @@ user_diagnosis :-
 observed_symptoms :- symptom(_,_).
 observed_symptoms :- symptom(_,_,_).
 
-% explain_diagnosis/1 - X Right side of the type(X) rule, to be checked vs the stored symptoms.
+% explain_diagnosis/1 - X Right side of the condition(X) rule, to be checked vs the stored symptoms.
 explain_diagnosis(X) :-
     X = diagnosis(T, [B]),
     T \= healthy,
@@ -136,32 +136,32 @@ explain_diagnosis(X) :-
 
 % explain_treatment/1
 explain_treatment(X) :-
-    problem_type(nutrient_deficiency, X),
+    problem_condition(nutrient_deficiency, X),
     message_code(missing_nutrient, M),
     writeln(M).
 explain_treatment(X) :-
-    \+ problem_type(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
+    \+ problem_condition(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
     bagof(Y, treatment(X, Y), L),
     message_code(treatment, M),
     writeln(M),
     maplist(writeln, L).
 explain_treatment(X) :-
-    \+ problem_type(nutrient_deficiency, X),
+    \+ problem_condition(nutrient_deficiency, X),
     \+ treatment(X),
     message_code(treatment_none, M),
     writeln(M).
 
 % observed_symptoms/1 Unifies S with the aggregated lists of symptoms
 observed_symptoms(S) :- 
-    findall(symptom(M1, S1), (type(T1), symptom(M1, S1)), R1), 
-    findall(symptom(M2, S2, C), (type(T2), symptom(M2, S2, C)), R2),
+    findall(symptom(M1, S1), (condition(T1), symptom(M1, S1)), R1), 
+    findall(symptom(M2, S2, C), (condition(T2), symptom(M2, S2, C)), R2),
     append([R1, R2], L),
     all(X, member(X, L), S).
 
 % type_body/2 Unifies B with the right side of the type predicate
 type_body(T, B) :-
-    type(T),
-    clause(type(T), R),
+    condition(T),
+    clause(condition(T), R),
     conj_to_list(R, B).
     
 conj_to_list((H, C), [H|T]) :-
