@@ -69,11 +69,15 @@ match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
 diagnosis(X, L) :- all((X,Y), (plant(X,_,_), diagnosis(X,Y,_)), L).
 
-% problem_card/2 - The predicate holds when the first argument is a KB 'type' ground atom,
+% problem_card/3 - The predicate holds when the first argument is a KB 'type' ground atom,
 % and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
 problem_card(T, H, C) :-
     class(C, T),
     health_problem(H, C).
+problem_card(T, A) :-
+    class(C, T),
+    health_problem(H, C),
+    atomic_concat([H, ' problem, ',T, ' ', C], A).
 
 % abiotic_status/2
 abiotic_status(P, H) :-

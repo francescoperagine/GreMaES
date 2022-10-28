@@ -13,7 +13,7 @@ kb_browse(X) :-
 
 % health_problems/1
 health_problems(L1) :- 
-    all(T, class(C, T), L),
+    all(T, (class(C, T), C \= healthy), L),
     maplist(problem_card, L, L1).
 
 % sections/1
