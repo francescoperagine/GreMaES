@@ -53,7 +53,7 @@ monitor_cleanup :-
     retractall(actuator_status(_,_)).
 
 % plants/1 
-plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species_temperature(S, Tmin, Tmax), growth_stage(H, Hmin, Hmax)), L).
+plants(L) :- all(P-S-temperature-Tmin-Tmax-humidity-Hmin-Hmax, (plant(P, S, H), species(S, Tmin, Tmax), growth_stage(H, Hmin, Hmax)), L).
 
 % monitor_loop_start/0
 monitor_loop_start :- 
@@ -125,8 +125,8 @@ store(P, T, D, A) :-
 % range_value/3 Unifies min/max with the respective sensor_type
 range_value(T, Min, Max) :-
     T = temperature,
-    all(Tmin, species_temperature(_, Tmin, _), TminL),
-    all(Tmax, species_temperature(_, _, Tmax), TmaxL),
+    all(Tmin, species(_, Tmin, _), TminL),
+    all(Tmax, species(_, _, Tmax), TmaxL),
     min_list(TminL, Min),
     max_list(TmaxL, Max).
 range_value(T, Min, Max) :-
@@ -210,7 +210,7 @@ parse(X) :-
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
     T = temperature,
-    species_temperature(S, Tmin, Tmax),
+    species(S, Tmin, Tmax),
     Tavg is (Tmin + Tmax) /2.
 plant_range_values(P, T, Hmin, Hmax, Havg) :-
     T = humidity,
