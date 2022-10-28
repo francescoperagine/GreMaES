@@ -136,17 +136,17 @@ explain_diagnosis(X) :-
 
 % explain_treatment/1
 explain_treatment(X) :-
-    class(nutrient_deficiency, X),
+    problem_type(nutrient_deficiency, X),
     message_code(missing_nutrient, M),
     writeln(M).
 explain_treatment(X) :-
-    \+ class(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
+    \+ problem_type(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
     bagof(Y, treatment(X, Y), L),
     message_code(treatment, M),
     writeln(M),
     maplist(writeln, L).
 explain_treatment(X) :-
-    \+ class(nutrient_deficiency, X),
+    \+ problem_type(nutrient_deficiency, X),
     \+ treatment(X),
     message_code(treatment_none, M),
     writeln(M).

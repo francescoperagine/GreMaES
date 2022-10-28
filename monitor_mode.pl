@@ -24,7 +24,7 @@ monitor_start :-
 greenhouse_init :-
     health_problem(none, C),
     timestamp(TS),
-    class(C, T),
+    problem_type(C, T),
     all(health_status(P, TS, C, T), plant(P,_,_), L),
     maplist(assertz, L).
 

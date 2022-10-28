@@ -1,15 +1,15 @@
 % health_problem/2
 health_problem(pests, infestation).
 
-% class/2
-class(infestation, apthids).
-class(infestation, thrips).
-class(infestation, spider_mites).
-class(infestation, scale_insects).
-class(infestation, white_flies).
-class(infestation, cutworms).
-class(infestation, fungus_gnats).
-class(infestation, mealy_bugs).
+% problem_type/2
+problem_type(infestation, apthids).
+problem_type(infestation, thrips).
+problem_type(infestation, spider_mites).
+problem_type(infestation, scale_insects).
+problem_type(infestation, white_flies).
+problem_type(infestation, cutworms).
+problem_type(infestation, fungus_gnats).
+problem_type(infestation, mealy_bugs).
 
 % type/1
 % treatment/1

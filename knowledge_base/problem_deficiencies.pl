@@ -1,19 +1,19 @@
 % health_problem/2
 health_problem(abiotic, nutrient_deficiency).
 
-% class/2
-class(nutrient_deficiency, nitrogen).
-class(nutrient_deficiency, phosphorus).
-class(nutrient_deficiency, potassium).
-class(nutrient_deficiency, sulfur).
-class(nutrient_deficiency, magnesium).
-class(nutrient_deficiency, calcium).
-class(nutrient_deficiency, boron).
-class(nutrient_deficiency, chloride).
-class(nutrient_deficiency, copper).
-class(nutrient_deficiency, iron).
-class(nutrient_deficiency, manganese).
-class(nutrient_deficiency, zinc).
+% problem_type/2
+problem_type(nutrient_deficiency, nitrogen).
+problem_type(nutrient_deficiency, phosphorus).
+problem_type(nutrient_deficiency, potassium).
+problem_type(nutrient_deficiency, sulfur).
+problem_type(nutrient_deficiency, magnesium).
+problem_type(nutrient_deficiency, calcium).
+problem_type(nutrient_deficiency, boron).
+problem_type(nutrient_deficiency, chloride).
+problem_type(nutrient_deficiency, copper).
+problem_type(nutrient_deficiency, iron).
+problem_type(nutrient_deficiency, manganese).
+problem_type(nutrient_deficiency, zinc).
 
 % type/1
 

@@ -27,13 +27,11 @@ rules(L) :- all((P, X, R), (problem_type(P, X), clause(type(X), R)), L).
 
 % browse/1
 browse(X) :-
-    kb_mode,
     X \= rules,
     writeln(X),
     call(X, L),
     menu_display(L).
 browse(X) :-
-    kb_mode,
     X \= rules,
     writeln(X),
     call(X, L),
@@ -41,7 +39,6 @@ browse(X) :-
     flatten(L, L1),
     menu_display(X, L1).
 browse(X) :-
-    kb_mode,
     X = rules,
     rules(L),
     maplist(writeln, L).
