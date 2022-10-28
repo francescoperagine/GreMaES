@@ -1,6 +1,7 @@
 :- use_module(library(system)).
 :- use_module(library(random)).
 
+:- dynamic health_status/4.
 :- dynamic diagnosis/3.
 :- dynamic actuator_status/2.
 
@@ -12,14 +13,36 @@ reading_variability(X) :- X is 1.2.
 monitor_start :-
     welcome_monitor, nl,
     monitor_cleanup,
+    greenhouse_init,
     actuator_init,
     plants(L),
     maplist(writeln, L), nl,
-    monitor_loop_start.
+    monitor_loop_start,
+    greenhouse_status.
 
+% greenhouse_init/0
+greenhouse_init :-
+    health_problem(none, C),
+    timestamp(TS),
+    class(C, T),
+    all(health_status(P, TS, C, T), plant(P,_,_), L),
+    maplist(assertz, L).
+
+% greenhouse_status/0
+greenhouse_status :-
+    all(health_status(P, TS, C, T), (plant(P,_,_), health_status(P, TS, C, T)), L),
+    maplist(writeln, L).
+
+% timestamp/1
+timestamp(T) :- 
+    datime(datime(Year, Month, Day, Hour, Minute, Second)),
+    T = ts(Year-Month-Day, Hour:Minute:Second).
+
+% actuator_init/0
 actuator_init :-
     all(actuator_status(A, off), plant_actuator(P, A), L),
     maplist(assertz, L).
+
 
 % monitor_cleanup/0
 monitor_cleanup :-
@@ -131,10 +154,12 @@ sampling_manifest_section(M, S) :-
 
 % parsing_start/0
 parsing_start :- 
-    all((TS, P, L), (plant(P, _, _), timestamp(TS), all(A, (plant_reading(P, T, _, A), T = caption), L)), L),
+    timestamp(TS), 
+    all((TS, P, L), (plant(P, _, _), all(A, (plant_reading(P, T, _, A), T = caption), L)), L),
     parsing_readings(L).
 parsing_start :- 
-    all((TS, P, [R]), (plant_reading(P, T, D, R), timestamp(TS), T \= caption), L),
+    timestamp(TS), 
+    all((TS, P, [R]), (plant_reading(P, T, D, R), T \= caption), L),
     parsing_readings(L).
     
 % parsing_readings/1
@@ -157,9 +182,11 @@ parse(X) :-
     match(R, L),    % checks if the observed symptoms match any problem
     Y = diagnosis(P, T, TS),
     assertz(Y),
+    problem_card(T, H, C),
+    assertz(health_status(P, TS, C, T)),
     maplist(retractall, L),
-    problem_card(T, A),
-    write('- Plant '), write(P), write(' caption diagnosis is '), write(A), write(' because of '), writeln(B),
+    atomic_concat(['- Plant ', P, ' caption diagnosis is ', H, ' ', C, ' ', T, ' because of '], A),
+    write(A), writeln(B),
     lognl((TS, P, caption, L, A)).
 parse(X) :-
     X = (TS, P, L),
@@ -173,15 +200,13 @@ parse(X) :-
     range_status(V, Min, Max, S),
     D = diagnosis(P, T:S:V, TS),
     assertz(D),
-    write('- Plant '), write(P), write(' reading diagnosis is '), write(T), write(' '), writeln(S),
+    abiotic_status(P, H),
+    assertz(health_status(P, TS, abiotic_problem, H)),
+    atomic_concat(['- Plant ', P, ' reading diagnosis is ', T, ' ', S], A),
+    writeln(A),
     lognl((TS, P, T, V, S)),
     actuator_start(P, T, S).
-
-% timestamp/1
-timestamp(T) :- 
-    datime(datime(Year, Month, Day, Hour, Minute, Second)),
-    T = ts(Year-Month-Day, Hour:Minute:Second).
-    
+  
 % plant_range_values/5
 plant_range_values(P, T, Tmin, Tmax, Tavg) :-
     T = temperature,

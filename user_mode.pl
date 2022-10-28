@@ -122,7 +122,8 @@ observed_symptoms :- symptom(_,_,_).
 explain_diagnosis(X) :-
     X = diagnosis(T, [B]),
     T \= healthy,
-    problem_card(T, A),
+    problem_card(T, H, C),
+    atomic_concat([H, ' - ', T, ' ', C], A),
     message_code(diagnosis_of, M),
     message_code(because_of, N),
     nl, write(M), write(A), write(N), writeln(B),

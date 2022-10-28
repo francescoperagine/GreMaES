@@ -67,46 +67,38 @@ treatment_card(T, L) :- all(A, (treatment(T, D), atomic_concat([T, ': ', D], A))
 
 match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
-% problem_card/2 - The predicate holds when the first argument is a KB 'type' ground atom,
-% and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
-problem_card(T, A) :-
-    class(C, T),
-    health_problem(H, C),
-    atomic_concat([H, ' - ', T, ' ', C], A).
-
 diagnosis(X, L) :- all((X,Y), (plant(X,_,_), diagnosis(X,Y,_)), L).
 
-wet(X) :-
-    plant(X,_,_),
-    diagnosis(X,Y,_),
-    Y = H:S:V,
-    H = humidity,
-    S = high.
-all_wet(L) :- all(X, wet(X), L).
+% problem_card/2 - The predicate holds when the first argument is a KB 'type' ground atom,
+% and other arguments unify with the KB atoms. Unifies A1 with the concatenate terms
+problem_card(T, H, C) :-
+    class(C, T),
+    health_problem(H, C).
 
-dry(X) :-
+% abiotic_status/2
+abiotic_status(P, H) :-
     plant(X,_,_),
     diagnosis(X,Y,_),
-    Y = H:S:V,
-    H = humidity,
-    S = low.
-all_dry(L) :- all(X, dry(X), L).
+    Y = M:S:V,
+    abiotic_status_forward(M, S, H).
 
-hot(X) :-
-    plant(X,_,_),
-    diagnosis(X,Y,_),
-    Y = T:S:V,
-    T = temperature,
-    S = high.
-all_hot(L) :- all(X, hot(X), L).
-
-cold(X) :-
-    plant(X,_,_),
-    diagnosis(X,Y,_),
-    Y = T:S:V,
-    T = temperature,
-    S = low.
-all_cold(L) :- all(X, cold(X), L).
+% abiotic_status_forward/3
+abiotic_status_forward(M, S, H) :-
+    M = humidity,
+    S = high,
+    H = wet.
+abiotic_status_forward(M, S, H) :-
+    M = humidity,
+    S = low,
+    H = dry.
+abiotic_status_forward(M, S, H) :-
+    M = temperature,
+    S = high,
+    H = hot.
+abiotic_status_forward(M, S, H) :-
+    M = temperature,
+    S = low,
+    H = cold.
 
 % askif/1
 askif(Q) :-
