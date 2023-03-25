@@ -1,176 +1,170 @@
-user_start :-
+% user_mode_start/0
+user_mode_start :-
     symptomatology,
     user_diagnosis.
 
 % symptomatology/0
 symptomatology :-
     repeat,
-    get_symptom,
+    ask_symptom,
     \+ (once_again).
 
 % once_again/0
 once_again :- askif(new_symptom).
 
-% get_symptom/0
-get_symptom :- 
-    get_user_choice(signs, M),
-    assertz(current_sign(M)),
+% ask_symptom/0
+ask_symptom :- 
+    user_input(signs, Sign),
+    assertz(current_sign(Sign)),
     symptomatology_forward,
     symptomatology_cleanup.
 
+% symptomatology_forward/0
+% If the sign is not associated to a color, sets it to none.
+symptomatology_forward :-
+    current_sign(Sign),
+    \+ sign_color(Sign, _),
+    user_input(sign_locations, Location),
+    assertz(symptom(Location, Sign, none)).
+% If the sign is associated to a color, asks it.
+symptomatology_forward :-
+    current_sign(Sign),
+    sign_color(Sign, _),
+    user_input(sign_colors, Color), 
+    user_input(sign_locations, Location),
+    assertz(symptom(Location, Sign, Color)).
+
 % symptomatology_cleanup/0
 symptomatology_cleanup :- 
-    retractall(asked(_, _)),
+    retractall(asked(_,_)),
     retractall(current_sign(_)).
-    
-% symptomatology_forward/0
-symptomatology_forward :-
-    current_sign(M),
-    \+ sign_color(M, _),
-    get_user_choice(current_sign_sections, S),
-    assertz(symptom(S, M)).
-symptomatology_forward :-
-    current_sign(M),
-    sign_color(M, _),
-    get_user_choice(current_sign_colors, C), 
-    get_user_choice(current_sign_sections, S),
-    assertz(symptom(S, M, C)).
 
-% get_user_choice/2
-% Unifies the concept X with a list of options L, reads the user choice from that list and unifies it with Y.
-get_user_choice(X, Y) :- 
-    call(X, L), 
-    menu_ask(X, L, Y).
+% user_input/2
+% Unifies the relation name with a list of options L, reads the user UserChoice from that list and returns the user's choice.
+user_input(Relation, UserChoice) :-
+    call(Relation, Options), 
+    show_title(Relation), nl,
+    show_options(Options),
+    read(UserInput),
+    input_choice(Options, UserInput, UserChoice),
+    write_message(option_selected), write(UserInput), write(': '), writeln(UserChoice), nl.
 
-% current_sign_sections/2
-current_sign_sections(L) :-
-    current_sign(M),
-    all(S, sign_section(M, S), L).
+% sign_location/1
+sign_locations(Locations) :-
+    current_sign(Sign),
+    all(Location, sign_location(Sign, Location), Locations).
 
-% current_sign_colors/2
-current_sign_colors(L) :- 
-    current_sign(M),
-    all(C, sign_color(M, C), L).
+% sign_colors/1
+sign_colors(Colors) :-
+    current_sign(Sign),
+    all(Color, sign_color(Sign, Color), Colors).
 
-% Progressive building of the signed symptom.
-% Each symptom signed on a section, and may have an appereance, an appereance with a color or a behaviour.
+% show_title/1 - Shows the title if present, otherwise prints the relation's name.
+show_title(Relation) :- 
+    writeln_message(Relation).
+show_title(Relation) :-
+    \+ writeln_message(Relation),
+    writeln(Relation).
 
-% menu_ask/3 - Menu title T, options' list L, entry name X
-menu_ask(T, L, Y) :-
-    menu_with_title(T, L), nl,
-    message_code(item_number_no_exit, M),
-    read(X),
-    menu_input_handler(L, X, Y),
-    message_code(option_selected, N),
-    write(N), write(X), write(': '), writeln(Y), nl.
-
-% menu_display/2 - Shows the title and goes ahead with the diplaying part.
-menu_with_title(T, L) :- 
-    message_code(T, X),
-    writeln(X),
-    menu_display(L).
-menu_with_title(T, L) :-
-    \+ message_code(T, X),
-    writeln(T),
-    menu_display(L).
-
-% menu_display/1 - Options' list L, counter starts from 1
+% show_options/1 - Options' list L, counter starts from 1
 % Shows a numbered list of ordered options, stripping atom names from their underscores.
-menu_display(L) :- menu_display(L, 1), !. 
-menu_display([], _).
-menu_display([H|T], N) :-
+show_options(Options) :- show_options(Options, 1), !. 
+show_options([], _).
+show_options([H|T], N) :-
     atomic_concat([N, '. ', H], A),
     writeln(A),
     N1 is N + 1,
-    menu_display(T, N1).
+    show_options(T, N1).
 
-% menu_input_handler/3 - The entry number X of list L unifies with list entry name Y.
-menu_input_handler(L, X, Y) :-
-    integer(X),
-    nth1(X, L, Y),
-    validate_entry(L, Y).
+% input_choice/3 - The entry number X of list L unifies with list entry name Y.
+input_choice(Options, UserInput, UserChoice) :-
+    integer(UserInput),
+    nth1(UserInput, Options, UserChoice),
+    validate_input(Options, UserChoice).
 
-% validate_entry/2
-validate_entry(L, X) :- 
-    member(X, L),
+% validate_input/2
+validate_input(Options, UserChoice) :- 
+    member(UserChoice, Options),
     !.
-validate_entry(L, X) :-
-    not(member(X, L)),
-    message_code(not_recognized_value, M),
-    writeln(M).
+validate_input(Options, UserChoice) :-
+    not(member(UserChoice, Options)),
+    writeln_message(not_recognized_value).
 
-% user_diagnosis/0    
+% user_diagnosis/0
+% No symptoms case
 user_diagnosis :-
-    observed_symptoms,
-    all(diagnosis(T, B), (type_body(T, B), observed_symptoms(S), match(B, S)), D),
-    maplist(explain_diagnosis, D).
+    \+ has_symptoms,
+    writeln_message(no_symptom).
+% If there are symptoms but there's no clear diagnosis, the system extracts the conditions that may be involved (partial match with symptoms)
 user_diagnosis :-
-    \+ observed_symptoms,
-    message_code(no_symptom, M),
-    writeln(M).
+    has_symptoms,
+    \+ has_condition,
+    writeln_message(no_diagnosis).
+    % guess_conditions.
+% Matches the symptoms of every condition with the observed ones
 user_diagnosis :-
-    observed_symptoms,
-    \+ (condition(X)),
-    message_code(no_diagnosis, M),
-    writeln(M).
+    has_symptoms,
+    all(diagnosis(Condition, ConditionSymptoms),
+        (observed_symptoms(ObservedSymptoms), condition_symptoms(Condition, ConditionSymptoms), match(ConditionSymptoms, ObservedSymptoms), assertz(diagnosis(Condition))),
+        Diagnoses),
+    maplist(explain, Diagnoses).
 
-% observed_symptoms/0
-observed_symptoms :- symptom(_,_).
-observed_symptoms :- symptom(_,_,_).
+% has_symptoms/0
+has_symptoms :- symptom(_,_,_).
 
-% explain_diagnosis/1 - X Right side of the condition(X) rule, to be checked vs the stored symptoms.
-explain_diagnosis(X) :-
-    X = diagnosis(T, [B]),
-    T \= healthy,
-    problem_card(T, H, C),
-    atomic_concat([H, ' - ', T, ' ', C], A),
-    message_code(diagnosis_of, M),
-    message_code(because_of, N),
-    nl, write(M), write(A), write(N), writeln(B),
-    explain_treatment(T), nl.
-explain_diagnosis(X) :-
-    X = diagnosis(T, [B]),
-    T = healthy,
-    message_code(treatment_healthy, M),
-    writeln(M), nl.
+% has_condition/0
+has_condition :- condition(_).
 
-% explain_treatment/1
-explain_treatment(X) :-
-    problem_condition(nutrient_deficiency, X),
-    message_code(missing_nutrient, M),
-    writeln(M).
-explain_treatment(X) :-
-    \+ problem_condition(nutrient_deficiency, X), % nutrient deficiencies have no direct treatment.
-    bagof(Y, treatment(X, Y), L),
-    message_code(treatment, M),
-    writeln(M),
-    maplist(writeln, L).
-explain_treatment(X) :-
-    \+ problem_condition(nutrient_deficiency, X),
-    \+ treatment(X),
-    message_code(treatment_none, M),
-    writeln(M).
+% guess_conditions/0
+guess_conditions :-
+    % for each symptom check wich problem can be
+    all(symptom(Location, Sign, Color), symptom(Location, Sign, Color), Symptoms),
+    member(Symptom, Symptoms),
+    guess_conditions(Symptom),
+    !.
+% guess_conditions/1
+guess_conditions(Symptom) :-
+    all(Condition, (
+        clause(condition(Condition), ConditionBody),
+        conj_to_list(ConditionBody, ConditionSymptoms),
+        memberchk(Symptom, ConditionSymptoms),
+        write(Symptom), write_message(due_from), writeln(Conditions)
+    ), Conditions).
 
-% observed_symptoms/1 Unifies S with the aggregated lists of symptoms
-observed_symptoms(S) :- 
-    findall(symptom(M1, S1), (condition(T1), symptom(M1, S1)), R1), 
-    findall(symptom(M2, S2, C), (condition(T2), symptom(M2, S2, C)), R2),
-    append([R1, R2], L),
-    all(X, member(X, L), S).
+% observed_symptoms/1 Unifies S with the aggregated lists of observed symptoms
+observed_symptoms(Symptoms) :- 
+    all(symptom(Location, Sign, Color), (condition(Condition), symptom(Location, Sign, Color)), Symptoms).
 
-% type_body/2 Unifies B with the right side of the type predicate
-type_body(T, B) :-
-    condition(T),
-    clause(condition(T), R),
-    conj_to_list(R, B).
-    
-conj_to_list((H, C), [H|T]) :-
-    !,
-    conj_to_list(C, T).
-conj_to_list(H, [H]).
+% condition_symptoms/2 Unifies ConditionSymptoms with the right side of the condition rule
+condition_symptoms(Condition, ConditionSymptoms) :-
+    condition(Condition),
+    clause(condition(Condition), ConditionBody),
+    conj_to_list(ConditionBody, ConditionSymptoms).
 
-list_to_conj([H|T], (H, C)) :-
-    !,
-    list_to_conj(T, C).
-list_to_conj([H], H).
+% explain/1 If a diagnosis is reachehd, the plant is sick. The diagnosis is explained and the treatment is shown, if present.
+explain(Diagnosis) :-
+    Diagnosis = diagnosis(Condition, [ConditionSymptoms]),
+    show_diagnosis(Condition, ConditionSymptoms),
+    show_treatment(Condition).
+explain(Diagnosis) :-
+    writeln_message(treatment_healthy).
 
+% show_diagnosis/2
+show_diagnosis(Condition, ConditionSymptoms) :-
+    problem_condition(Problem, Condition),
+    status_problem(Status, Problem),
+    write_message(diagnosis_of), write(Status), write(' '), write(Problem), write(' - '), write(Condition), write_message(because_of), write(ConditionSymptoms), nl.
+
+% show_treatment/1
+show_treatment(Condition) :-
+    problem_condition(nutrient_deficiency, Condition),
+    writeln_message(missing_nutrient).
+show_treatment(Condition) :-
+    \+ problem_condition(nutrient_deficiency, Condition),
+    bagof(Treatment, treatment(Condition, Treatment), Treatments),
+    writeln_message(treatment),
+    maplist(writeln, Treatments).
+show_treatment(Condition) :-
+    \+ problem_condition(nutrient_deficiency, Condition),
+    \+ treatment(Condition),
+    writeln_message(treatment_none).

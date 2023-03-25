@@ -4,12 +4,12 @@
 :- use_module(library(apply_macros)).
 
 :- dynamic asked/2.
-:- dynamic current_section/1.
-:- dynamic symptom/2.
+:- dynamic current_location/1.
 :- dynamic symptom/3.
-:- dynamic condition/1.
 
-:- [knowledge_base/kb, user_mode, kb_mode, monitor_mode].
+:- ensure_loaded(logger).
+:- [user_mode, kb_mode, monitor_mode, knowledge_base/kb].
+:- leash(none).
 
 % start/0
 start :- 
@@ -24,23 +24,25 @@ init :-
 
 % init_cleanup/0
 init_cleanup :-
-    retractall(asked(_, _)),
-    retractall(symptom(_,_)),
+    retractall(asked(_,_)),
     retractall(symptom(_,_,_)).
 
 % set_fruition_mode/0
 set_fruition_mode :- 
     user_mode,
-    user_start.
+    ensure_loaded(user_mode),
+    user_mode_start.
 set_fruition_mode :-
     \+ (user_mode),
     kb_mode,
-    kb_start.
+    ensure_loaded(kb_mode),
+    kb_mode_start.
 set_fruition_mode :-
     \+ (user_mode),
     \+ (kb_mode),
     monitor_mode,
-    monitor_start.
+    ensure_loaded(monitor_mode),
+    monitor_mode_start.
 
 % restart/0
 restart :- 
@@ -55,54 +57,44 @@ kb_mode :- askif(fruition_mode(kb_mode)).
 monitor_mode :- askif(fruition_mode(monitor_mode)).
 
 % signs/1
-signs(L) :- all(M, sign_section(M, S), L).
+signs(Signs) :- all(Sign, sign_location(Sign, _), Signs).
 
-% treatments/1
-treatments(L2) :- 
-    all(T, treatment(T, _), L),
-    maplist(treatment_card, L, L1),
-    flatten(L1, L2).
+% locations/1
+locations(Locations) :- all(Location, sign_location(_, Location), Locations).
 
-treatment_card(T, L) :- all(A, (treatment(T, D), atomic_concat([T, ': ', D], A)), L).
+% colors/1
+colors(Colors) :- all(Color, sign_color(_, Color), Colors).
 
+% rules/1
+rules(Rules) :-
+    all(
+        (Status, Condition, ConditionSymptomsBody),
+        (status_problem(Status, Problem), problem_condition(Problem, Condition), clause(condition(Condition), ConditionSymptomsBody)),
+        Rules
+    ).
+
+% write_message/1
+write_message(MessageCode) :-
+    message_code(MessageCode, Message),
+    write(Message).
+% writeln_message/1
+writeln_message(MessageCode) :-
+    message_code(MessageCode, Message),
+    writeln(Message).
+
+% match/2 Checks whether every member of L1 is in L2
 match(L1, L2):- forall(member(X, L1), member(X, L2)).
 
-diagnosis(X, L) :- all((X,Y), (plant(X,_,_), diagnosis(X,Y,_)), L).
+% conj_to_list/2
+conj_to_list((H, C), [H|T]) :-
+    !,
+    conj_to_list(C, T).
+conj_to_list(H, [H]).
 
-% problem_card/3
-problem_card(T, H, C) :-
-    problem_condition(C, T),
-    health_problem(H, C).
-%  problem_card/2
-problem_card(T, A) :-
-    problem_condition(C, T),
-    health_problem(H, C),
-    atomic_concat([H, ' problem, ',T, ' ', C], A).
-
-% abiotic_status/2
-abiotic_status(P, H) :-
-    plant(X,_,_),
-    diagnosis(X,Y,_),
-    Y = M:S:V,
-    abiotic_status_forward(M, S, H).
-
-% abiotic_status_forward/3
-abiotic_status_forward(M, S, H) :-
-    M = humidity,
-    S = high,
-    H = wet.
-abiotic_status_forward(M, S, H) :-
-    M = humidity,
-    S = low,
-    H = dry.
-abiotic_status_forward(M, S, H) :-
-    M = temperature,
-    S = high,
-    H = hot.
-abiotic_status_forward(M, S, H) :-
-    M = temperature,
-    S = low,
-    H = cold.
+list_to_conj([H|T], (H, C)) :-
+    !,
+    list_to_conj(T, C).
+list_to_conj([H], H).
 
 % askif/1
 askif(Q) :-
@@ -149,14 +141,13 @@ ask2(Q, Qcode, A, A) :-
     \+ (A = '?'),
     asserta(asked(Qcode, A)).
 
-% explain/1
-explain(X) :- 
-    explanation(X, Y),
-    writeln(Y).
-explain(X) :-
-    \+ explanation(X, Y),
-    message_code(no_explanation, M),
-    writeln(M).
+% % explain/1
+% explain(X) :- 
+%     explanation(X, Y),
+%     writeln(Y).
+% explain(X) :-
+%     \+ explanation(X, Y),
+%     writeln_message(no_explanation).
 
 % affirmative/1
 affirmative(yes).

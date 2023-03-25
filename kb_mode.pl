@@ -1,6 +1,6 @@
-% kb_start/0
-kb_start :- 
-    L = [health_problems, sections, signs, colors, treatments, rules],
+% kb_mode_start/0
+kb_mode_start :- 
+    L = [status_problems, locations, signs, colors, treatments, rules],
     maplist(kb_browse, L).
 
 % kb_browse/1
@@ -11,19 +11,10 @@ kb_browse(X) :-
     asked(view(X), A),
     negative(A).
 
-% health_problems/1
-health_problems(L1) :- 
-    all(T, (problem_condition(C, T), C \= healthy), L),
+% status_problems/1
+status_problems(L1) :- 
+    all(C, condition(C), L),
     maplist(problem_card, L, L1).
-
-% sections/1
-sections(L) :- all(S, sign_section(_, S), L).
-
-% colors/1
-colors(L) :- all(C, sign_color(_, C), L).
-
-% rules/
-rules(L) :- all((P, X, R), (problem_condition(P, X), clause(condition(X), R)), L).
 
 % browse/1
 browse(X) :-
