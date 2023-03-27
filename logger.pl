@@ -16,7 +16,6 @@ logln(Message) :-
     logFile(File, FilePath),
     open(FilePath, append, Stream),
     write(Stream, Message),
-    write(Stream, '.'),
     nl(Stream),
     close(Stream),
     writeln(Message).

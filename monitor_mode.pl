@@ -396,4 +396,4 @@ actuator_forward(X) :-
 greenhouse_status :-
     logln('\nGreenhouse status:'),
     all(health_status(Plant, HealthStatus), (plants(Plants), member(Plant, Plants), health_status(Plant, HealthStatus)), PlantsStatuses),
-    maplist(writeln, PlantsStatuses).
+    maplist(logln, PlantsStatuses).
