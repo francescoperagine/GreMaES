@@ -5,9 +5,11 @@
 :- dynamic actuator_status/2.
 :- dynamic plant_reading/5.
 :- dynamic condition/1.
+:- dynamic status_problem/2.
+:- dynamic health_status/2.
 
 % How many samplings' repetitions must be made for each loop 
-loop_repetitions(X) :- X is 10.
+loop_repetitions(X) :- X is 5.
 % How many senconds between each sampling
 loop_interval(X) :- X is 1.
 % How much the readings may differ from the standard range of values
@@ -17,20 +19,24 @@ sign_probability(X) :- X is 1.
 
 % monitor_mode_start/0
 monitor_mode_start :-
+    greenhouse_init,
+    !,
+    monitor_mode_forward,
+    health_checker,
+    greenhouse_status.
+
+% greenhouse_init/0
+greenhouse_init :-
     monitor_cleanup,
     welcome_monitor,
-    % greenhouse_init,
-    actuator_init,
-    plants(Plants),
-    maplist(writeln, Plants), nl,
-    monitor_mode_forward,
-    health_checker.
-    % greenhouse_status.
+    plants_reading_ranges(PlantsRanges),
+    maplist(writeln, PlantsRanges), nl,
+    actuators_init.
 
 % monitor_mode_forward/0
 monitor_mode_forward :-
     debug_mode,
-    consult(debug).
+    consult(plant_reading_samples).
 monitor_mode_forward :-
     \+ debug_mode,
     monitor_loop_start.
@@ -42,31 +48,33 @@ debug_mode :- askif(debug_mode).
 monitor_cleanup :-
     retractall(asked(_,_)),
     retractall(symptom(_,_,_)),
+    retractall(plant_status(_,_,_)),
+    retractall(plant_reading(_,_,_,_,_)),
     retractall(actuator_status(_,_)).
-
-% greenhouse_init/0 Initializes the status of every plant as healthy
-% greenhouse_init :-
-%     timestamp(TS),
-%     all(plant_overview(P, TS, C, T), plant(P,_,_), L),
-%     maplist(assertz, L).
 
 % timestamp/1
 timestamp(T) :- 
     datime(datime(Year, Month, Day, Hour, Minute, Second)),
     T = timestamp(Year-Month-Day, Hour:Minute:Second).
 
-% actuator_init/0
-actuator_init :-
+% actuators_init/0
+actuators_init :-
     all(actuator_status(Actuator, off), plant_actuator(Plant, Actuator), ActuatorsStatus),
     maplist(assertz, ActuatorsStatus).
 
-% plants/1 
-plants(Plants) :-
+% plants/1 - Gets all plants with installed sensors
+plants(SortedPlants) :-
+    all(Plant, plant_sensor(Plant, _), Plants),
+    sort(Plants, SortedPlants).
+
+% plants_reading_ranges/1 
+plants_reading_ranges(SortedPlants) :-
     all(
-        Plant-Species-temperature-TemperatureMin-TemperatureMax-humidity-HumidityStage-HumidityMin-HumidityMax,
+        Plant-Species-temperature_range-TemperatureMin-TemperatureMax-humidity_range-HumidityStage-HumidityMin-HumidityMax,
         (plant(Plant, Species, HumidityStage), species(Species, TemperatureMin, TemperatureMax), humidity_range(HumidityStage, HumidityMin, HumidityMax)),
         Plants
-    ).
+    ),
+    sort(Plants, SortedPlants).
 
 % monitor_loop_start/0
 monitor_loop_start :- 
@@ -145,31 +153,23 @@ sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, Capt
 % store/5
 store(PlantReading) :-
     PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
-    writeln(PlantReading),
-    assertz(PlantReading).
-    % log(PlantReading).
-% store(Reading) :-
-%     Reading = reading(SensorType, Value),
-%     writeln(Reading),
-%     assertz(Reading).
-%     % log(Reading).
+    assertz(PlantReading),
+    logln(PlantReading).
 % Stores a symptom if it has not yet been stored
 store(Symptom) :-  
     Symptom = symptom(Location, Sign, Color),
     % if it has not been stored yet, stores it.
     \+ symptom(Location, Sign, Color),
     assertz(Symptom).
-    % log(Symptom).
 % Does nothing if the symptom is already present
 store(Symptom) :-  
     Symptom = symptom(Location, Sign, Color),
     symptom(Location, Sign, Color).
-% store/1
-% store(X) :-
-%     X = actuator(ActuatorID, ActuatorStatus),
-%     retractall(actuator_status(ActuatorID, _)),
-%     assertz(actuator_status(ActuatorID, ActuatorStatus)).
-    % log(X).
+store(PlantStatus) :-
+    PlantStatus = plant_status(Plant, SensorType, ReadingStatus),
+    retractall(plant_status(Plant, SensorType, OldStatus)), % removes all previous stored informations of the same sensor
+    assertz(PlantStatus),
+    logln(PlantStatus).
 
 % range_value/3 Unifies min/max with the respective sensor_type between all species
 % Get range values of temperature
@@ -208,118 +208,117 @@ sampling_sign_location(Sign, RandomLocation) :-
 health_checker :-
     all(Plant, ActuatorID^plant_actuator(Plant, ActuatorID), Plants),
     sort(Plants, SortedPlants),
-    writeln(SortedPlants),
-    % forall(member(Plant, SortedPlants), parse_reading(Plant), retractall(plant_reading(Plant,_,_,_,_))).
+    % forall(member(Plant, SortedPlants), parse_plant_readings(Plant), retractall(plant_reading(Plant,_,_,_,_))).
     maplist(parse, SortedPlants).
 
 % parse/1
 parse(Plant) :-
     atomic_concat(['\nPlant ', Plant, ' recap: '], Message),
-    log(Message),
-    writeln(Message),
-    parse_symptom(Plant),
+    logln(Message),
+    parse_plant_symptoms(Plant),
     retractall(symptom(_,_,_)),
-    parse_reading(Plant),
+    parse_plant_readings(Plant),
     retractall(plant_reading(Plant,_,_,_,_)).
 
 % parse_forward/1
-parse_symptom(Plant) :-
+parse_plant_symptoms(Plant) :-
     all(Symptom, (plant_reading(Plant, _, SensorType, _, Symptom), SensorType = caption), PlantSymptoms),
-    find_diagnoses(PlantSymptoms).
-parse_symptom(Plant) :-
+    find_diagnoses(Plant, PlantSymptoms).
+parse_plant_symptoms(Plant) :-
     \+ plant_reading(Plant, _, caption, _, Value),
-    writeln('* shows no symptoms.').
+    logln('* shows no symptoms').
 
 % find_diagnoses/1
-find_diagnoses(PlantSymptoms) :-
+find_diagnoses(Plant, PlantSymptoms) :-
     % stores in the working memory the plant symptoms to match them with the diagnoses causes
     maplist(store, PlantSymptoms),
-    all((Condition, Symptoms), (condition(Condition), clause(condition(Condition), SymptomsConj), conj_to_list(SymptomsConj, Symptoms), match(Symptoms, PlantSymptoms)), Diagnoses),
+    all((Condition, Symptoms), (
+        condition(Condition),
+        clause(condition(Condition), SymptomsConj),
+        conj_to_list(SymptomsConj, Symptoms),
+        match(Symptoms, PlantSymptoms),
+        store(plant_status(Plant, caption, Condition))
+    ), Diagnoses),
     explain_plant_diagnoses(Diagnoses).
-find_diagnoses :-
-    writeln('\thas no clear diagnosis.').
+find_diagnoses(Plant, PlantSymptoms) :-
+    logln('^ no diagnosis').
 
 % explain_plant_diagnoses/1
 explain_plant_diagnoses([]).
 explain_plant_diagnoses([H|T]) :-
     H = (Condition, Symptoms),
     problem_condition(Problem, Condition),
-    atomic_concat(['\tdiagnosis is of ', Condition, ' ', Problem, ' because of: '], Message),
-    write(Message),
-    maplist(writeln, Symptoms),
+    atomic_concat(['^ diagnosis is of ', Condition, ' ', Problem, ' because of: '], Message),
+    log(Message),
+    maplist(logln, Symptoms),
     explain_plant_diagnoses(T).
 
-% abiotic_status/2
-% abiotic_status(P, H) :-
-%     plant(X,_,_),
-%     diagnosis(X,Y,_),
-%     Y = M:S:V,
-%     abiotic_status_forward(M, S, H).
+status_problem(abiotic, wet) :- reading(humidity, high).
+status_problem(abiotic, dry) :- reading(humidity, low).
+status_problem(abiotic, hot) :- reading(temperature, high).
+status_problem(abiotic, cold) :- reading(temperature, low).
 
-% abiotic_status(humidity, high, wet).
-% abiotic_status(humidity, low, dry).
-% abiotic_status(temperature, high, hot).
-% abiotic_status(temperature, low, cold).
+% health_status/2
+health_status(Plant, HealthStatus) :-
+    plant_status(Plant, SensorType, Reading),
+    clause(status_problem(Status, Problem), reading(SensorType, Reading)),
+    HealthStatus = Status-Problem.
+health_status(Plant, HealthStatus) :-
+    plant_status(Plant, SensorType, Reading),
+    problem_condition(Problem, Reading),
+    status_problem(Status, Problem),
+    HealthStatus = Status-Problem.
+health_status(Plant, HealthStatus) :-
+    plant_status(Plant, SensorType, Reading),
+    \+ clause(status_problem(Status, Problem), reading(SensorType, Reading)),
+    \+ problem_condition(Problem, Reading),
+    HealthStatus = healthy.
+health_status(Plant, HealthStatus) :-
+    \+ plant_status(Plant, SensorType, Reading),
+    HealthStatus = unknown.
 
-% abiotic_status_forward/3
-% abiotic_status_forward(M, S, H) :-
-%     M = humidity,
-%     S = high,
-%     H = wet.
-% abiotic_status_forward(M, S, H) :-
-%     M = humidity,
-%     S = low,
-%     H = dry.
-% abiotic_status_forward(M, S, H) :-
-%     M = temperature,
-%     S = high,
-%     H = hot.
-% abiotic_status_forward(M, S, H) :-
-%     M = temperature,
-%     S = low,
-%     H = cold.
-
-
-% parse_reading/1
+% parse_plant_readings/1
 % Retrieves the SensorType associated with the Plant and starts the parsing
-parse_reading(Plant) :-
+parse_plant_readings(Plant) :-
     all(SensorType, (Plant^plant_actuator(Plant, ActuatorID), ActuatorID^actuator(ActuatorID, SensorType,_,_)), SensorTypes),
-    write('- installed sensors '), writeln(SensorTypes),
-    forall(member(SensorType, SensorTypes), parse_reading(Plant, SensorType)).
+    log('- installed sensors '), logln(SensorTypes),
+    forall(member(SensorType, SensorTypes), parse_plant_readings(Plant, SensorType)).
 
-% parse_reading/2
-parse_reading(Plant, SensorType) :-
+% parse_plant_readings/2
+parse_plant_readings(Plant, SensorType) :-
     setof(V, (plant_reading(Plant, Timestamp, SensorType, SensorName, V), SensorType \= caption), Values),
     last(Values, LastValue),
     retractall(plant_reading(Plant, _, SensorType, _, _)),
     (SensorType = temperature -> Type = ' Celsius' ; Type = '%'),
-    reading_status(Plant, SensorType, LastValue, Status),
-    atomic_concat(['* ', SensorType, ' if of ', LastValue, Type, ', status is ', Status], Message),
-    log(Message),
-    writeln(Message),
+    reading_status(Plant, SensorType, LastValue, ReadingStatus),
+    atomic_concat(['* ', SensorType, ' if of ', LastValue, Type, ', status is ', ReadingStatus], Message),
+    logln(Message),
     !,
-    actuator_start(Plant, SensorType, Status).
-parse_reading(Plant, SensorType) :-
+    actuator_start(Plant, SensorType, ReadingStatus).
+parse_plant_readings(Plant, SensorType) :-
     \+ plant_reading(Plant, _, SensorType, _, _),
-    atomic_concat(['* ', SensorType, ' has_no_reading'], Message),
-    log(Message),
-    writeln(Message).
-parse_reading(Plant, SensorType) :-
-    writeln('parse_reading something went awry').
+    atomic_concat(['* ', SensorType, ' no reading'], Message),
+    logln(Message).
+parse_plant_readings(Plant, SensorType) :-
+    logln('* parse_plant_readings something went awry').
 
 % reading_status/4
-reading_status(Plant, SensorType, Value, Status) :-
+reading_status(Plant, SensorType, Value, ReadingStatus) :-
     plant_range_values(Plant, SensorType, Min, Max),
     Value < Min,
-    Status = low. 
-reading_status(Plant, SensorType, Value, Status) :-
+    ReadingStatus = low,
+    PlantStatus = plant_status(Plant, SensorType, ReadingStatus),
+    store(PlantStatus).
+reading_status(Plant, SensorType, Value, ReadingStatus) :-
     plant_range_values(Plant, SensorType, Min, Max),
     Value > Max,
-    Status = high.
-reading_status(Plant, SensorType, Value, Status) :-
+    ReadingStatus = high,
+    PlantStatus = plant_status(Plant, SensorType, ReadingStatus),
+    store(PlantStatus).
+reading_status(Plant, SensorType, Value, ReadingStatus) :-
     plant_range_values(Plant, SensorType, Min, Max),
     between(Min, Max, Value),
-    Status = ok.
+    ReadingStatus = ok.
 
 % plant_range_values/4
 plant_range_values(Plant, SensorType, Min, Max) :-
@@ -335,16 +334,15 @@ plant_range_values(Plant, SensorType, Min, Max) :-
 % There's no actuator on the plant
 actuator_start(Plant, _, _) :- 
     \+ plant_actuator(Plant, _),
-    Message = ', no_actuators',
-    write(Message),
-    log(Plant, ' ', Message).
+    % Message = ,
+    % write(Message),
+    log(Plant, ' , no actuators').
 % There's no actuator of the right type (temp/hum)
 actuator_start(Plant, SensorType, _) :- 
     \+ actuator(ActuatorID, SensorType, HandledStatus, ActuatorClass),
     plant_actuator(Plant, ActuatorID),
-    atomic_concat([', no_', SensorType, '_actuator'], Message),
-    write(Message),
-    log(Plant, ' ', Message).
+    atomic_concat([Plant, ', no ', SensorType, ' actuator'], Message),
+    log(Message).
 % Retrieves all actuators of the same SensorType (temp/hum) that can handle the ActualStatus and activates them simultaneously
 actuator_start(Plant, SensorType, ActualStatus) :-
     all((ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
@@ -360,17 +358,15 @@ actuator_forward(X) :-
     actuator(ActuatorID, on), % If it's on, it shuts it down
     retractall(actuator(ActuatorID, _)),
     assertz(actuator(ActuatorID, off)),
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' was_on, now_shutted_off'], Message),
-    log(Message),
-    writeln(Message).
+    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has been turned off'], Message),
+    logln(Message).
 % it's off and doesn't handle the actual status, so it does nothing.
 actuator_forward(X) :-
     X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
     ActualStatus \= HandledStatus,
     \+ actuator(ActuatorID, on),
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has_nothing_to_do'], Message),
-    log(Message),
-    writeln(Message).
+    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has nothing to do'], Message),
+    logln(Message).
 % turns it on the actuator when needed
 actuator_forward(X) :-
     X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
@@ -378,98 +374,17 @@ actuator_forward(X) :-
     \+ actuator(ActuatorID, on), % If it's off, turns it on.
     retractall(actuator(ActuatorID, _)),
     assertz(actuator(ActuatorID, on)),
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' was_off, now_turned_on'], Message),
-    log(Message),
-    writeln(Message).
+    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has been turned on'], Message),
+    logln(Message).
 actuator_forward(X) :-
     X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
     ActualStatus = HandledStatus,
     actuator(ActuatorID, on), % If it's already on, does nothing.
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' was_already_on'], Message),
-    log(Message),
-    writeln(Message).
-
-% actuator_on/1
-% actuator_on(ActuatorID, ActuatorClass) :-
-%     \+ actuator_status(ActuatorID, on),
-%     atomic_concat([' * ', ActuatorClass, ' ', ActuatorID, ' ', turned_on], Message),
-%     writeln(Message),
-%     retractall(actuator(ActuatorID, _)),
-%     assertz(actuator(ActuatorID, on)),
-%     log(ActuatorID, ActuatorClass, actuator_status(ActuatorID, on), Message).
-% actuator_on(ActuatorID, ActuatorClass) :-
-    % actuator_status(ActuatorID, on),
-
-    % atomic_concat([' * ', ActuatorClass, ' ', ActuatorID, ' ', already_on], Message),
-    % writeln(Message).
-    % retract(actuator_status(ActuatorID, _)),
-    % assertz(actuator_status(ActuatorID, on)).
-% actuator_on(A) :- 
-%     assertz(actuator_status(ActuatorID, on)).
-
-% actuator_off/1
-% actuator_off(ActuatorID, ActuatorClass) :-
-%     \+ actuator_status(ActuatorID, off),
-%     atomic_concat([' * ', ActuatorClass, ' ', ActuatorID, ' ', turned_off], Message),
-%     writeln(Message),
-%     retractall(actuator(ActuatorID, _)),
-%     assertz(actuator(ActuatorID, off)),
-%     log(ActuatorID, ActuatorClass, actuator_status(ActuatorID, off), Message).
-% actuator_off(ActuatorID, ActuatorClass) :-
-    % actuator_status(ActuatorID, off),
-
-    % store(actuator(C)),
-    % retract(actuator_status(ActuatorID, _)),
-    % assertz(actuator_status(ActuatorID, off)).
-% actuator_off(A) :- 
-%     assertz(actuator_status(ActuatorID, off)).
-
-% % actuator_activate/5
-% actuator_activate(A, T, S, K, H) :-
-%     (S = normal ; S \= H),
-%     actuator_status(A, on),
-%     actuator_off(A),
-%     atomic_concat([' * ', K, ' ', A, ' ', turned_off], C),
-%     store(actuator(C)).
-% actuator_activate(A, T, S, K, H) :-
-%     (S = normal ; S \= H),
-%     actuator_status(A, off),
-%     atomic_concat([' * ', K, ' ', A, ' ', already_off], C),
-%     store(actuator(C)).
-% actuator_activate(A, T, S, K, H) :-
-%     S \= normal,
-%     S = H,
-%     actuator_status(A, off),
-%     actuator_on(A),
-%     atomic_concat([' * ', K, ' ', A, ' ', turned_on], C),
-%     store(actuator(C)).
-% actuator_activate(A, T, S, K, H) :-
-%     S \= normal,
-%     S = H,
-%     actuator_status(A, on),
-%     atomic_concat([' * ', K, ' ', A, ' ', already_on], C),
-%     store(actuator(C)).
-% awry backup
-% actuator_activate(A, T, H, K, S) :-
-%     X = p_actuator(A, T, H, K, S),
-%     atomic_concat([A, T, H, K, S, something_went_awry], C),
-%     store(actuator(C)).
-
-% % actuator_on/1
-% actuator_on(A) :-
-%     retract(actuator_status(A, _)),
-%     assertz(actuator_status(A, on)).
-% actuator_on(A) :- 
-%     assertz(actuator_status(A, on)).
-
-% % actuator_off/1
-% actuator_off(A) :-
-%     retract(actuator_status(A, _)),
-%     assertz(actuator_status(A, off)).
-% actuator_off(A) :- 
-%     assertz(actuator_status(A, off)).
+    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' was already on'], Message),
+    logln(Message).
 
 % greenhouse_status/0
 greenhouse_status :-
-    all(plant_overview(P, TS, C, T), (plant(P,_,_), plant_overview(P, TS, C, T)), L),
-    maplist(writeln, L).
+    logln('\nGreenhouse status:'),
+    all(health_status(Plant, HealthStatus), (plants(Plants), member(Plant, Plants), health_status(Plant, HealthStatus)), PlantsStatuses),
+    maplist(writeln, PlantsStatuses).

@@ -8,7 +8,7 @@ welcome :-
 welcome_monitor :-
     writeln('This is the GreMaES monitor mode.'),
     writeln('To check out the functionalities of the system, some devices\' readings sampling will be randomly generated.'),
-    writeln('Plants hosted in our virtual greenhouse:'), nl.
+    writeln('\nPlants hosted in the virtual greenhouse:'), nl.
 
 goodbye :-
     nl, writeln('Thank you for using GreMaES - the Greehouse Management Expert System.'),
