@@ -7,13 +7,21 @@
 :- dynamic condition/1.
 :- dynamic status_problem/2.
 :- dynamic health_status/2.
+:- [knowledge_base/problem_abiotic].
 
+% loop_repetitions/1
 % How many samplings' repetitions must be made for each loop 
 loop_repetitions(X) :- X is 5.
+
+% loop_interval/1
 % How many senconds between each sampling
 loop_interval(X) :- X is 1.
+
+% reading_variability/1
 % How much the readings may differ from the standard range of values
 reading_variability(X) :- X is 1.3. 
+
+% sign_probability/1
 % How probable is to observe a sign during a sampling
 sign_probability(X) :- X is 1.
 
@@ -83,6 +91,7 @@ monitor_loop_start :-
     loop_interval(Interval),
     monitor_loop(Repetitions, Interval).
 
+% monitor_loop/2
 % It simulates the interval between readings
 monitor_loop(Repetitions, Interval) :-
     Repetitions > 0,
@@ -128,14 +137,14 @@ sampling(Plant, Timestamp, SensorType, Sensor) :-
     Value is floor(RandomValue),
     PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
     store(PlantReading).
-% sampling/4 Performs a random sampling from a camera device that returns a captioned symptom
+% Performs a random sampling from a camera device that returns a captioned symptom
 sampling(Plant, Timestamp, SensorType, Sensor) :-
     SensorType = caption,
     sign_probability(SignProbability),
     random(CaptionIsSign), % Did the camera capture a sign?
     sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, CaptionIsSign).
 
-% sampling/6 Simulates the probability that a plant is healthy reading SignProbability
+% sampling_probability/6 Simulates the probability that a plant is healthy reading SignProbability
 sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, CaptionIsSign) :-
     CaptionIsSign =< SignProbability,
     call(signs, Signs),
@@ -143,14 +152,14 @@ sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, Capt
     caption_forward(Sign, Value), % symptoms are the values of captions!
     PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
     store(PlantReading).
-% sampling/6 If the plant is healthy, the symptom(none, all) is stored
+% sampling_probability/6 If the plant is healthy, the symptom(none, all) is stored
 sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, CaptionIsSign) :-
     CaptionIsSign > SignProbability,
     caption_forward(none, Value),
     PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
     store(PlantReading).
 
-% store/5
+% store/1
 store(PlantReading) :-
     PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
     assertz(PlantReading),
@@ -228,7 +237,7 @@ parse_plant_symptoms(Plant) :-
     \+ plant_reading(Plant, _, caption, _, Value),
     logln('* shows no symptoms').
 
-% find_diagnoses/1
+% find_diagnoses/2
 find_diagnoses(Plant, PlantSymptoms) :-
     % stores in the working memory the plant symptoms to match them with the diagnoses causes
     maplist(store, PlantSymptoms),
@@ -252,11 +261,6 @@ explain_plant_diagnoses([H|T]) :-
     log(Message),
     maplist(logln, Symptoms),
     explain_plant_diagnoses(T).
-
-status_problem(abiotic, wet) :- reading(humidity, high).
-status_problem(abiotic, dry) :- reading(humidity, low).
-status_problem(abiotic, hot) :- reading(temperature, high).
-status_problem(abiotic, cold) :- reading(temperature, low).
 
 % health_status/2
 health_status(Plant, HealthStatus) :-
@@ -350,7 +354,7 @@ actuator_start(Plant, SensorType, ActualStatus) :-
         Actuators),
     maplist(actuator_forward, Actuators).
 
-% actuator_forward/4
+% actuator_forward/1
 % it turns the actuator off if it's not required anymore
 actuator_forward(X) :-
     X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),

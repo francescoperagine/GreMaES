@@ -66,9 +66,11 @@ show_title(Relation) :-
     \+ writeln_message(Relation),
     writeln(Relation).
 
-% show_options/1 - Options' list L, counter starts from 1
+% show_options/1 - Options' list L, count starts from 1
 % Shows a numbered list of ordered options, stripping atom names from their underscores.
 show_options(Options) :- show_options(Options, 1), !. 
+
+% show_options/2
 show_options([], _).
 show_options([H|T], N) :-
     atomic_concat([N, '. ', H], A),

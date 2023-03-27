@@ -52,8 +52,13 @@ restart :-
     init_cleanup,
     goodbye.
 
+% user_mode/0
 user_mode :- askif(fruition_mode(user_mode)).
+
+% kb_mode/0
 kb_mode :- askif(fruition_mode(kb_mode)).
+
+% monitor_mode/0
 monitor_mode :- askif(fruition_mode(monitor_mode)).
 
 % signs/1
@@ -91,6 +96,7 @@ conj_to_list((H, C), [H|T]) :-
     conj_to_list(C, T).
 conj_to_list(H, [H]).
 
+% list_to_conj/2
 list_to_conj([H|T], (H, C)) :-
     !,
     list_to_conj(T, C).
