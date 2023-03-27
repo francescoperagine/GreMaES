@@ -7,7 +7,12 @@
 :- dynamic condition/1.
 :- dynamic status_problem/2.
 :- dynamic health_status/2.
-:- [knowledge_base/problem_abiotic].
+
+% status_problem/2
+status_problem(abiotic, wet) :- reading(humidity, high).
+status_problem(abiotic, dry) :- reading(humidity, low).
+status_problem(abiotic, hot) :- reading(temperature, high).
+status_problem(abiotic, cold) :- reading(temperature, low).
 
 % loop_repetitions/1
 % How many samplings' repetitions must be made for each loop 
