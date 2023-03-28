@@ -25,7 +25,7 @@ explanation(fruition_mode(kb_mode), 'Shows all the informations about health pro
 question_code(fruition_mode(monitor_mode), 'Do you want to start the monitor mode').
 explanation(fruition_mode(monitor_mode), 'Simulates the use of devices to test the automations of the system').
 question_code(debug_mode, 'Do you want to proceed with debug mode').
-question_code(start_again, 'Would you like to run the program again').
+question_code(start_again, '\nWould you like to run the program again').
 question_code(new_symptom, 'Would you like to register a new symptom').
 question_code(continue_monitor_loop, 'Do you want to continue the sampling').
 
@@ -46,13 +46,13 @@ message_code(no_plant_actuator, 'There is no actuator for plant ').
 message_code(sign_locations, 'Which location is affected by the problem?').
 message_code(signs, 'How is the problem manifested?').
 message_code(sign_colors, 'What color does it have?').
-message_code(diagnosis_of, '-> The diagnosis is of ').
-message_code(because_of, ', because of ').
+message_code(because_of, '\nBecause of ').
+message_code(diagnosis_of, ' the diagnosis is of ').
 message_code(due_from, ', could be due from ').
 message_code(option_selected, 'You have selected option n.').
 message_code(missing_nutrient, 'Treatment: provide the missing nutrient to the plant.').
 message_code(treatment, '* Treatment: ').
-message_code(treatment_none, ' -> There a no treatments for this.').
-message_code(treatment_healthy, ' -> The plant is perfectly healthy. There is no treatment to apply.').
+message_code(treatment_none, '* There a no treatments for this.').
+message_code(treatment_healthy, '* The plant is perfectly healthy. There is no treatment to apply.').
 
 message_code(no_type_actuator, 'There is no actuator for that type').

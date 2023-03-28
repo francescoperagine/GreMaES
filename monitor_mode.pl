@@ -49,7 +49,7 @@ greenhouse_init :-
 % monitor_mode_forward/0
 monitor_mode_forward :-
     debug_mode,
-    consult(plant_reading_samples).
+    consult(plant_caption_samples).
 monitor_mode_forward :-
     \+ debug_mode,
     monitor_loop_start.
@@ -83,8 +83,8 @@ plants(SortedPlants) :-
 % plants_reading_ranges/1 
 plants_reading_ranges(SortedPlants) :-
     all(
-        Plant-Species-temperature_range-TemperatureMin-TemperatureMax-humidity_range-HumidityStage-HumidityMin-HumidityMax,
-        (plant(Plant, Species, HumidityStage), species(Species, TemperatureMin, TemperatureMax), humidity_range(HumidityStage, HumidityMin, HumidityMax)),
+        Plant-Species-temperature_range-TemperatureMin-TemperatureMax-growth_humidity-GrowthStage-HumidityMin-HumidityMax,
+        (plant(Plant, Species, GrowthStage), species(Species, TemperatureMin, TemperatureMax), growth_humidity(GrowthStage, HumidityMin, HumidityMax)),
         Plants
     ),
     sort(Plants, SortedPlants).
@@ -196,8 +196,8 @@ range_value(SensorType, Min, Max) :-
 % Get range values of humidity
 range_value(SensorType, Min, Max) :-
     SensorType = humidity,
-    all(Hmin, humidity_range(_, Hmin, _), HminL),
-    all(Hmax, humidity_range(_, _, Hmax), HmaxL),
+    all(Hmin, growth_humidity(_, Hmin, _), HminL),
+    all(Hmax, growth_humidity(_, _, Hmax), HmaxL),
     min_list(HminL, Min),
     max_list(HmaxL, Max).
 
@@ -276,7 +276,7 @@ health_status(Plant, HealthStatus) :-
     plant_status(Plant, SensorType, Reading),
     problem_condition(Problem, Reading),
     status_problem(Status, Problem),
-    HealthStatus = Status-Problem.
+    HealthStatus = Status-Problem-Reading.
 health_status(Plant, HealthStatus) :-
     plant_status(Plant, SensorType, Reading),
     \+ clause(status_problem(Status, Problem), reading(SensorType, Reading)),
@@ -327,7 +327,7 @@ reading_status(Plant, SensorType, Value, ReadingStatus) :-
 reading_status(Plant, SensorType, Value, ReadingStatus) :-
     plant_range_values(Plant, SensorType, Min, Max),
     between(Min, Max, Value),
-    ReadingStatus = ok.
+    ReadingStatus = normal.
 
 % plant_range_values/4
 plant_range_values(Plant, SensorType, Min, Max) :-
@@ -336,8 +336,8 @@ plant_range_values(Plant, SensorType, Min, Max) :-
     species(Species, Min, Max).
 plant_range_values(Plant, SensorType, Min, Max) :-
     SensorType = humidity,
-    plant(Plant, _, HumidityStage),
-    humidity_range(HumidityStage, Min, Max).
+    plant(Plant, _, GrowthStage),
+    growth_humidity(GrowthStage, Min, Max).
 
 % actuator_start/3
 % There's no actuator on the plant
@@ -348,48 +348,48 @@ actuator_start(Plant, _, _) :-
     log(Plant, ' , no actuators').
 % There's no actuator of the right type (temp/hum)
 actuator_start(Plant, SensorType, _) :- 
-    \+ actuator(ActuatorID, SensorType, HandledStatus, ActuatorClass),
+    \+ actuator(ActuatorID, SensorType, ActivationStatus, Class),
     plant_actuator(Plant, ActuatorID),
     atomic_concat([Plant, ', no ', SensorType, ' actuator'], Message),
     log(Message).
-% Retrieves all actuators of the same SensorType (temp/hum) that can handle the ActualStatus and activates them simultaneously
-actuator_start(Plant, SensorType, ActualStatus) :-
-    all((ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
-        (plant_actuator(Plant, ActuatorID), actuator(ActuatorID, SensorType, HandledStatus, ActuatorClass)),
+% Retrieves all actuators of the same SensorType (temp/hum) that can handle the CurrentStatus and activates them simultaneously
+actuator_start(Plant, SensorType, CurrentStatus) :-
+    all((ActuatorID, Class, CurrentStatus, ActivationStatus),
+        (plant_actuator(Plant, ActuatorID), actuator(ActuatorID, SensorType, ActivationStatus, Class)),
         Actuators),
     maplist(actuator_forward, Actuators).
 
 % actuator_forward/1
 % it turns the actuator off if it's not required anymore
 actuator_forward(X) :-
-    X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
-    ActualStatus \= HandledStatus,
-    actuator(ActuatorID, on), % If it's on, it shuts it down
-    retractall(actuator(ActuatorID, _)),
-    assertz(actuator(ActuatorID, off)),
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has been turned off'], Message),
+    X = (ActuatorID, Class, CurrentStatus, ActivationStatus),
+    CurrentStatus \= ActivationStatus,
+    actuator_status(ActuatorID, on), % If it's on, it shuts it down
+    retractall(actuator_status(ActuatorID, _)),
+    assertz(actuator_status(ActuatorID, off)),
+    atomic_concat(['\t', ActuatorID, ' ', Class, ' has been turned off'], Message),
     logln(Message).
 % it's off and doesn't handle the actual status, so it does nothing.
 actuator_forward(X) :-
-    X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
-    ActualStatus \= HandledStatus,
-    \+ actuator(ActuatorID, on),
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has nothing to do'], Message),
+    X = (ActuatorID, Class, CurrentStatus, ActivationStatus),
+    CurrentStatus \= ActivationStatus,
+    \+ actuator_status(ActuatorID, on),
+    atomic_concat(['\t', ActuatorID, ' ', Class, ' has nothing to do'], Message),
     logln(Message).
 % turns it on the actuator when needed
 actuator_forward(X) :-
-    X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
-    ActualStatus = HandledStatus,
-    \+ actuator(ActuatorID, on), % If it's off, turns it on.
-    retractall(actuator(ActuatorID, _)),
-    assertz(actuator(ActuatorID, on)),
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' has been turned on'], Message),
+    X = (ActuatorID, Class, CurrentStatus, ActivationStatus),
+    CurrentStatus = ActivationStatus,
+    \+ actuator_status(ActuatorID, on), % If it's off, turns it on.
+    retractall(actuator_status(ActuatorID, _)),
+    assertz(actuator_status(ActuatorID, on)),
+    atomic_concat(['\t', ActuatorID, ' ', Class, ' has been turned on'], Message),
     logln(Message).
 actuator_forward(X) :-
-    X = (ActuatorID, ActuatorClass, ActualStatus, HandledStatus),
-    ActualStatus = HandledStatus,
-    actuator(ActuatorID, on), % If it's already on, does nothing.
-    atomic_concat(['\t', ActuatorID, ' ', ActuatorClass, ' was already on'], Message),
+    X = (ActuatorID, Class, CurrentStatus, ActivationStatus),
+    CurrentStatus = ActivationStatus,
+    actuator_status(ActuatorID, on), % If it's already on, does nothing.
+    atomic_concat(['\t', ActuatorID, ' ', Class, ' was already on'], Message),
     logln(Message).
 
 % greenhouse_status/0

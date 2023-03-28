@@ -1,5 +1,5 @@
 % actuator/4
-% ActuatorID, SensorType, HandledStatus, ActuatorClass
+% ActuatorID, SensorType, Activation, Class
 actuator(act1, temperature, low, thermostat).
 actuator(act2, temperature, high, fan).
 actuator(act3, humidity, low, sprinkler).

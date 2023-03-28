@@ -35,12 +35,13 @@ symptomatology_forward :-
     assertz(symptom(Location, Sign, Color)).
 
 % symptomatology_cleanup/0
+% Removes temporary informations to prepare to eventually register the next symptom.
 symptomatology_cleanup :- 
     retractall(asked(_,_)),
     retractall(current_sign(_)).
 
 % user_input/2
-% Unifies the relation name with a list of options L, reads the user UserChoice from that list and returns the user's choice.
+% Unifies Relation with a list of options, reads the user selection from that list and returns it as UserChoice.
 user_input(Relation, UserChoice) :-
     call(Relation, Options), 
     show_title(Relation), nl,
@@ -50,6 +51,7 @@ user_input(Relation, UserChoice) :-
     write_message(option_selected), write(UserInput), write(': '), writeln(UserChoice), nl.
 
 % sign_location/1
+% Unifies Locations with the list of all possible locations in which the temporary stored sign can manifest.
 sign_locations(Locations) :-
     current_sign(Sign),
     all(Location, sign_location(Sign, Location), Locations).
@@ -107,7 +109,7 @@ user_diagnosis :-
 user_diagnosis :-
     has_symptoms,
     all(diagnosis(Condition, ConditionSymptoms),
-        (observed_symptoms(ObservedSymptoms), condition_symptoms(Condition, ConditionSymptoms), match(ConditionSymptoms, ObservedSymptoms), assertz(diagnosis(Condition))),
+        (observed_symptoms(ObservedSymptoms), condition_symptoms(Condition, ConditionSymptoms), match(ConditionSymptoms, ObservedSymptoms)),
         Diagnoses),
     maplist(explain, Diagnoses).
 
@@ -149,13 +151,14 @@ explain(Diagnosis) :-
     show_diagnosis(Condition, ConditionSymptoms),
     show_treatment(Condition).
 explain(Diagnosis) :-
+    Diagnosis \= diagnosis(Condition, [ConditionSymptoms]),
     writeln_message(treatment_healthy).
 
 % show_diagnosis/2
 show_diagnosis(Condition, ConditionSymptoms) :-
     problem_condition(Problem, Condition),
     status_problem(Status, Problem),
-    write_message(diagnosis_of), write(Status), write(' '), write(Problem), write(' - '), write(Condition), write_message(because_of), write(ConditionSymptoms), nl.
+    write_message(because_of), write(ConditionSymptoms), write_message(diagnosis_of), write(Status), write(' '), write(Problem), write(' - '), writeln(Condition).
 
 % show_treatment/1
 show_treatment(Condition) :-
