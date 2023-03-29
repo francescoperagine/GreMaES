@@ -1,21 +1,18 @@
-% status_problem/2
-status_problem(biotic, disease).
+% health_issue/1
+health_issue(biotic) :- problem(disease).
 
-% problem_condition/2
-problem_condition(disease, black_spot).
-problem_condition(disease, leaf_spot).
-problem_condition(disease, powdery_mildew).
-problem_condition(disease, downy_mildew).
-problem_condition(disease, blight).
-problem_condition(disease, canker).
-problem_condition(disease, shot_hole).
-problem_condition(disease, early_blight).
-problem_condition(disease, late_blight).
-problem_condition(disease, grey_mold).
-problem_condition(disease, verticilium_wilt).
-
-% type/1
-% treatment/1
+% problem/1
+problem(disease) :- condition(black_spot).
+problem(disease) :- condition(leaf_spot).
+problem(disease) :- condition(powdery_mildew).
+problem(disease) :- condition(downy_mildew).
+problem(disease) :- condition(blight).
+problem(disease) :- condition(canker).
+problem(disease) :- condition(shot_hole).
+problem(disease) :- condition(early_blight).
+problem(disease) :- condition(late_blight).
+problem(disease) :- condition(grey_mold).
+problem(disease) :- condition(verticilium_wilt).
 
 % black_spot
 condition(black_spot) :- symptom(leaves, chlorotic, none), symptom(leaves, early_fall, none).

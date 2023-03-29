@@ -1,18 +1,15 @@
-% status_problem/2
-status_problem(pests, infestation).
+% health_issue/1
+health_issue(pests) :- problem(infestation).
 
-% problem_condition/2
-problem_condition(infestation, apthids).
-problem_condition(infestation, thrips).
-problem_condition(infestation, spider_mites).
-problem_condition(infestation, scale_insects).
-problem_condition(infestation, white_flies).
-problem_condition(infestation, cutworms).
-problem_condition(infestation, fungus_gnats).
-problem_condition(infestation, mealy_bugs).
-
-% type/1
-% treatment/1
+% problem/1
+problem(infestation) :- condition(apthids).
+problem(infestation) :- condition(thrips).
+problem(infestation) :- condition(spider_mites).
+problem(infestation) :- condition(scale_insects).
+problem(infestation) :- condition(white_flies).
+problem(infestation) :- condition(cutworms).
+problem(infestation) :- condition(fungus_gnats).
+problem(infestation) :- condition(mealy_bugs).
 
 % apthids
 condition(apthids) :- symptom(all, sticky_honeydew, none).

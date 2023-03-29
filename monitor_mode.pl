@@ -5,14 +5,8 @@
 :- dynamic actuator_status/2.
 :- dynamic plant_reading/5.
 :- dynamic condition/1.
-:- dynamic status_problem/2.
-:- dynamic health_status/2.
-
-% status_problem/2
-status_problem(abiotic, wet) :- reading(humidity, high).
-status_problem(abiotic, dry) :- reading(humidity, low).
-status_problem(abiotic, hot) :- reading(temperature, high).
-status_problem(abiotic, cold) :- reading(temperature, low).
+:- dynamic health_issue/1.
+:- dynamic problem/1.
 
 % loop_repetitions/1
 % How many samplings' repetitions must be made for each loop 
@@ -261,7 +255,7 @@ find_diagnoses(Plant, PlantSymptoms) :-
 explain_plant_diagnoses([]).
 explain_plant_diagnoses([H|T]) :-
     H = (Condition, Symptoms),
-    problem_condition(Problem, Condition),
+    clause(problem(Problem), condition(Condition)),
     atomic_concat(['^ diagnosis is of ', Condition, ' ', Problem, ' because of: '], Message),
     log(Message),
     maplist(logln, Symptoms),
@@ -270,17 +264,18 @@ explain_plant_diagnoses([H|T]) :-
 % health_status/2
 health_status(Plant, HealthStatus) :-
     plant_status(Plant, SensorType, Reading),
-    clause(status_problem(Status, Problem), reading(SensorType, Reading)),
-    HealthStatus = Status-Problem.
+    clause(problem(Problem), reading(SensorType, Reading)),
+    clause(health_issue(Issue), problem(Problem)),
+    HealthStatus = Issue-Problem.
 health_status(Plant, HealthStatus) :-
     plant_status(Plant, SensorType, Reading),
-    problem_condition(Problem, Reading),
-    status_problem(Status, Problem),
-    HealthStatus = Status-Problem-Reading.
+    clause(problem(Problem), condition(Reading)),
+    clause(health_issue(Issue), problem(Problem)),
+    HealthStatus = Issue-Problem-Reading.
 health_status(Plant, HealthStatus) :-
     plant_status(Plant, SensorType, Reading),
-    \+ clause(status_problem(Status, Problem), reading(SensorType, Reading)),
-    \+ problem_condition(Problem, Reading),
+    \+ clause(problem(Problem), reading(SensorType, Reading)),
+    \+ clause(problem(Problem), condition(Reading)),
     HealthStatus = healthy.
 health_status(Plant, HealthStatus) :-
     \+ plant_status(Plant, SensorType, Reading),
@@ -396,4 +391,5 @@ actuator_forward(X) :-
 greenhouse_status :-
     logln('\nGreenhouse status:'),
     all(health_status(Plant, HealthStatus), (plants(Plants), member(Plant, Plants), health_status(Plant, HealthStatus)), PlantsStatuses),
-    maplist(logln, PlantsStatuses).
+    maplist(logln, PlantsStatuses),
+    logln('\n').

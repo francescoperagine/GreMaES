@@ -68,9 +68,11 @@ show_title(Relation) :-
     \+ writeln_message(Relation),
     writeln(Relation).
 
-% show_options/1 - Options' list L, count starts from 1
+% show_options/1
 % Shows a numbered list of ordered options, stripping atom names from their underscores.
-show_options(Options) :- show_options(Options, 1), !. 
+show_options(Options) :- 
+    show_options(Options, 1),
+    !. 
 
 % show_options/2
 show_options([], _).
@@ -80,7 +82,7 @@ show_options([H|T], N) :-
     N1 is N + 1,
     show_options(T, N1).
 
-% input_choice/3 - The entry number X of list L unifies with list entry name Y.
+% input_choice/3 - The entry number UserInput of list Options unifies with list entry UserChoice.
 input_choice(Options, UserInput, UserChoice) :-
     integer(UserInput),
     nth1(UserInput, Options, UserChoice),
@@ -103,13 +105,20 @@ user_diagnosis :-
 user_diagnosis :-
     has_symptoms,
     \+ has_condition,
-    writeln_message(no_diagnosis).
-    % guess_conditions.
+    writeln_message(no_condition).
 % Matches the symptoms of every condition with the observed ones
 user_diagnosis :-
     has_symptoms,
+    all(
+        symptom(Location, Sign, Color),
+        symptom(Location, Sign, Color),
+        ObservedSymptoms
+    ),
     all(diagnosis(Condition, ConditionSymptoms),
-        (observed_symptoms(ObservedSymptoms), condition_symptoms(Condition, ConditionSymptoms), match(ConditionSymptoms, ObservedSymptoms)),
+        (
+            condition_symptoms(Condition, ConditionSymptoms),
+            match(ConditionSymptoms, ObservedSymptoms)
+        ),
         Diagnoses),
     maplist(explain, Diagnoses).
 
@@ -118,26 +127,6 @@ has_symptoms :- symptom(_,_,_).
 
 % has_condition/0
 has_condition :- condition(_).
-
-% guess_conditions/0
-guess_conditions :-
-    % for each symptom check wich problem can be
-    all(symptom(Location, Sign, Color), symptom(Location, Sign, Color), Symptoms),
-    member(Symptom, Symptoms),
-    guess_conditions(Symptom),
-    !.
-% guess_conditions/1
-guess_conditions(Symptom) :-
-    all(Condition, (
-        clause(condition(Condition), ConditionBody),
-        conj_to_list(ConditionBody, ConditionSymptoms),
-        memberchk(Symptom, ConditionSymptoms),
-        write(Symptom), write_message(due_from), writeln(Conditions)
-    ), Conditions).
-
-% observed_symptoms/1 Unifies S with the aggregated lists of observed symptoms
-observed_symptoms(Symptoms) :- 
-    all(symptom(Location, Sign, Color), (condition(Condition), symptom(Location, Sign, Color)), Symptoms).
 
 % condition_symptoms/2 Unifies ConditionSymptoms with the right side of the condition rule
 condition_symptoms(Condition, ConditionSymptoms) :-
@@ -150,9 +139,6 @@ explain(Diagnosis) :-
     Diagnosis = diagnosis(Condition, [ConditionSymptoms]),
     show_diagnosis(Condition, ConditionSymptoms),
     show_treatment(Condition).
-explain(Diagnosis) :-
-    Diagnosis \= diagnosis(Condition, [ConditionSymptoms]),
-    writeln_message(treatment_healthy).
 
 % show_diagnosis/2
 show_diagnosis(Condition, ConditionSymptoms) :-

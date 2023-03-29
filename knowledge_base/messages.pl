@@ -37,8 +37,7 @@ question_code(what(X), X) :- write('What ').
 message_code(stop_selection, 'Stop by user selection.').
 message_code(not_recognized_value, 'The selected value was not recognized. Try again.').
 message_code(yes_or_no, 'Please answer yes or no.').
-message_code(no_problem, 'There is no problem.').
-message_code(no_diagnosis, 'There is no clear diagnosis.').
+message_code(no_condition, 'There is no condition to treat.').
 message_code(no_explanation, 'There is no explanation for this.').
 message_code(no_symptom, 'There are no observed symptoms.').
 message_code(no_actuator, 'There is no suitable actuator for ').
@@ -53,6 +52,5 @@ message_code(option_selected, 'You have selected option n.').
 message_code(missing_nutrient, 'Treatment: provide the missing nutrient to the plant.').
 message_code(treatment, '* Treatment: ').
 message_code(treatment_none, '* There a no treatments for this.').
-message_code(treatment_healthy, '* The plant is perfectly healthy. There is no treatment to apply.').
 
 message_code(no_type_actuator, 'There is no actuator for that type').

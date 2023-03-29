@@ -1,21 +1,31 @@
-% status_problem/2
-status_problem(abiotic, nutrient_deficiency).
+% health_issue/1
 
-% problem_condition/2
-problem_condition(nutrient_deficiency, nitrogen).
-problem_condition(nutrient_deficiency, phosphorus).
-problem_condition(nutrient_deficiency, potassium).
-problem_condition(nutrient_deficiency, sulfur).
-problem_condition(nutrient_deficiency, magnesium).
-problem_condition(nutrient_deficiency, calcium).
-problem_condition(nutrient_deficiency, boron).
-problem_condition(nutrient_deficiency, chloride).
-problem_condition(nutrient_deficiency, copper).
-problem_condition(nutrient_deficiency, iron).
-problem_condition(nutrient_deficiency, manganese).
-problem_condition(nutrient_deficiency, zinc).
+health_issue(abiotic) :- problem(wet).
+health_issue(abiotic) :- problem(dry).
+health_issue(abiotic) :- problem(hot).
+health_issue(abiotic) :- problem(cold).
+health_issue(abiotic) :- problem(nutrient_deficiency).
 
-% condition/1
+% problem/1
+
+problem(wet) :- reading(humidity, high).
+problem(dry) :- reading(humidity, low).
+problem(hot) :- reading(temperature, high).
+problem(cold) :- reading(temperature, low).
+
+
+problem(nutrient_deficiency) :- condition(nitrogen).
+problem(nutrient_deficiency) :- condition(phosphorus).
+problem(nutrient_deficiency) :- condition(potassium).
+problem(nutrient_deficiency) :- condition(sulfur).
+problem(nutrient_deficiency) :- condition(magnesium).
+problem(nutrient_deficiency) :- condition(calcium).
+problem(nutrient_deficiency) :- condition(boron).
+problem(nutrient_deficiency) :- condition(chloride).
+problem(nutrient_deficiency) :- condition(copper).
+problem(nutrient_deficiency) :- condition(iron).
+problem(nutrient_deficiency) :- condition(manganese).
+problem(nutrient_deficiency) :- condition(zinc).
 
 % nitrogen
 condition(nitrogen) :- symptom(lower_leaves, altered_color, chlorotic).

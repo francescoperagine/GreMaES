@@ -73,10 +73,14 @@ colors(Colors) :- all(Color, sign_color(_, Color), Colors).
 % rules/1
 rules(Rules) :-
     all(
-        (Status, Condition, ConditionSymptomsBody),
-        (status_problem(Status, Problem), problem_condition(Problem, Condition), clause(condition(Condition), ConditionSymptomsBody)),
-        Rules
-    ).
+        (Issue, Problem, Condition, Symptoms),
+        (
+            clause(health_issue(Issue), problem(Problem)),
+            clause(problem(Problem), condition(Condition)),
+            clause(condition(Condition), SymptomsConj),
+            conj_to_list(SymptomsConj, Symptoms)
+        ),
+        Rules).
 
 % write_message/1
 write_message(MessageCode) :-
