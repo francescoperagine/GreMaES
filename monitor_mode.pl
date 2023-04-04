@@ -8,13 +8,13 @@
 :- dynamic health_issue/1.
 :- dynamic problem/1.
 
-% loop_repetitions/1
+% sampling_batch_size/1
 % How many samplings' repetitions must be made for each loop 
-loop_repetitions(X) :- X is 5.
+sampling_batch_size(X) :- X is 5.
 
-% loop_interval/1
+% sampling_interval/1
 % How many senconds between each sampling
-loop_interval(X) :- X is 1.
+sampling_interval(X) :- X is 1.
 
 % reading_variability/1
 % How much the readings may differ from the standard range of values
@@ -43,7 +43,7 @@ greenhouse_init :-
 % monitor_mode_forward/0
 monitor_mode_forward :-
     debug_mode,
-    consult(plant_caption_samples).
+    consult(percepts_samples).
 monitor_mode_forward :-
     \+ debug_mode,
     monitor_loop_start.
@@ -86,8 +86,8 @@ plants_reading_ranges(SortedPlants) :-
 % monitor_loop_start/0
 monitor_loop_start :- 
     retractall(asked(continue_monitor_loop, _)),
-    loop_repetitions(Repetitions),
-    loop_interval(Interval),
+    sampling_batch_size(Repetitions),
+    sampling_interval(Interval),
     monitor_loop(Repetitions, Interval).
 
 % monitor_loop/2
@@ -110,12 +110,12 @@ monitor_loop(Repetitions, Interval) :-
 % sampling_init/0
 % the random sensor is picked up from those already active on plants
 sampling_init :- 
-    all(Sensor, plant_sensor(_, Sensor), Sensors), 
-    random_list_element(Sensors, RandomSensor),
-    sensor(RandomSensor, SensorType),
-    plant_sensor(Plant, RandomSensor),
+    all(SensorID, plant_sensor(_, SensorID), Sensors), 
+    random_list_element(Sensors, RandomSensorID),
+    sensor(RandomSensorID, SensorType),
+    plant_sensor(Plant, RandomSensorID),
     timestamp(Timestamp),
-    sampling(Plant, Timestamp, SensorType, RandomSensor).
+    sampling(Plant, Timestamp, SensorType, RandomSensorID).
 
 % random_list_element/2
 random_list_element(List, Element) :-
@@ -123,77 +123,52 @@ random_list_element(List, Element) :-
     random(0, Length, RandomNumber),
     nth0(RandomNumber, List, Element).
 
-% sampling/4 Performs a random sampling from a sensor that returns an integer number
-sampling(Plant, Timestamp, SensorType, Sensor) :-
+% sampling/4
+% Performs a random sampling from a sensor that returns an integer number
+sampling(Plant, Timestamp, SensorType, SensorID) :-
     SensorType \= caption,
     reading_variability(Variability),
-    range_value(SensorType, Min, Max),
+    plant_range_values(Plant, SensorType, Min, Max),
     MinV is Min / Variability,
     MaxV is Max * Variability,
     (SensorType = humidity, MinV < 0 -> MinV1 = 0 ; MinV1 = MinV),
     (SensorType = humidity, MaxV > 100 -> MaxV1 = 100 ; MaxV1 = MaxV),
     random(MinV1, MaxV1, RandomValue),
     Value is floor(RandomValue),
-    PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
+    PlantReading = plant_reading(Plant, Timestamp, SensorType, SensorID, Value),
     store(PlantReading).
 % Performs a random sampling from a camera device that returns a captioned symptom
-sampling(Plant, Timestamp, SensorType, Sensor) :-
+sampling(Plant, Timestamp, SensorType, SensorID) :-
     SensorType = caption,
     sign_probability(SignProbability),
     random(CaptionIsSign), % Did the camera capture a sign?
-    sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, CaptionIsSign).
+    sampling_sign_probability(Plant, Timestamp, SensorType, SensorID, SignProbability, CaptionIsSign).
 
-% sampling_probability/6 Simulates the probability that a plant is healthy reading SignProbability
-sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, CaptionIsSign) :-
+% plant_range_values/4
+plant_range_values(Plant, SensorType, Min, Max) :-
+    SensorType = temperature,
+    plant(Plant, Species, _),
+    species(Species, Min, Max).
+plant_range_values(Plant, SensorType, Min, Max) :-
+    SensorType = humidity,
+    plant(Plant, _, GrowthStage),
+    growth_humidity(GrowthStage, Min, Max).
+
+% sampling_sign_probability/6
+% Simulates the probability that a plant is healthy reading SignProbability
+sampling_sign_probability(Plant, Timestamp, SensorType, SensorID, SignProbability, CaptionIsSign) :-
     CaptionIsSign =< SignProbability,
     call(signs, Signs),
     random_list_element(Signs, Sign),
     caption_forward(Sign, Value), % symptoms are the values of captions!
-    PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
+    PlantReading = plant_reading(Plant, Timestamp, SensorType, SensorID, Value),
     store(PlantReading).
-% sampling_probability/6 If the plant is healthy, the symptom(none, all) is stored
-sampling_probability(Plant, Timestamp, SensorType, Sensor, SignProbability, CaptionIsSign) :-
+% sampling_sign_probability/6 If the plant is healthy, the symptom(none, all) is stored
+sampling_sign_probability(Plant, Timestamp, SensorType, SensorID, SignProbability, CaptionIsSign) :-
     CaptionIsSign > SignProbability,
     caption_forward(none, Value),
-    PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
+    PlantReading = plant_reading(Plant, Timestamp, SensorType, SensorID, Value),
     store(PlantReading).
-
-% store/1
-store(PlantReading) :-
-    PlantReading = plant_reading(Plant, Timestamp, SensorType, Sensor, Value),
-    assertz(PlantReading),
-    logln(PlantReading).
-% Stores a symptom if it has not yet been stored
-store(Symptom) :-  
-    Symptom = symptom(Location, Sign, Color),
-    % if it has not been stored yet, stores it.
-    \+ symptom(Location, Sign, Color),
-    assertz(Symptom).
-% Does nothing if the symptom is already present
-store(Symptom) :-  
-    Symptom = symptom(Location, Sign, Color),
-    symptom(Location, Sign, Color).
-store(PlantStatus) :-
-    PlantStatus = plant_status(Plant, SensorType, ReadingStatus),
-    retractall(plant_status(Plant, SensorType, OldStatus)), % removes all previous stored informations of the same sensor
-    assertz(PlantStatus),
-    logln(PlantStatus).
-
-% range_value/3 Unifies min/max with the respective sensor_type between all species
-% Get range values of temperature
-range_value(SensorType, Min, Max) :-
-    SensorType = temperature,
-    all(Tmin, species(_, Tmin, _), TminL),
-    all(Tmax, species(_, _, Tmax), TmaxL),
-    min_list(TminL, Min),
-    max_list(TmaxL, Max).
-% Get range values of humidity
-range_value(SensorType, Min, Max) :-
-    SensorType = humidity,
-    all(Hmin, growth_humidity(_, Hmin, _), HminL),
-    all(Hmax, growth_humidity(_, _, Hmax), HmaxL),
-    min_list(HminL, Min),
-    max_list(HmaxL, Max).
 
 % caption_forward/2
 % If there is no associated color, sets the 3rd argument to none
@@ -212,11 +187,33 @@ sampling_sign_location(Sign, RandomLocation) :-
     all(Location, sign_location(Sign, Location), Locations),
     random_list_element(Locations, RandomLocation).
 
+% store/1
+% Stores a percept if it has not yet been observed. Does nothing otherwise
+store(PlantReading) :-
+    PlantReading = plant_reading(Plant, Timestamp, SensorType, SensorID, Value),
+    assertz(PlantReading),
+    logln(PlantReading).
+store(PlantReading) :-
+    PlantReading = plant_reading(Plant, Timestamp, SensorType, SensorID, Value),
+    plant_reading(Plant, Timestamp, SensorType, SensorID, Value).
+store(Symptom) :-  
+    Symptom = symptom(Location, Sign, Color),
+    \+ symptom(Location, Sign, Color),
+    assertz(Symptom),
+    logln(Symptom).
+store(Symptom) :-  
+    Symptom = symptom(Location, Sign, Color),
+    symptom(Location, Sign, Color).
+store(PlantStatus) :-
+    PlantStatus = plant_status(Plant, SensorType, ReadingStatus),
+    retractall(plant_status(Plant, SensorType, OldStatus)), % removes all previous stored informations of the same sensor
+    assertz(PlantStatus),
+    logln(PlantStatus).
+
 % health_checker/0
 health_checker :-
-    all(Plant, ActuatorID^plant_actuator(Plant, ActuatorID), Plants),
+    all(Plant, SensorID^plant_sensor(Plant, SensorID), Plants),
     sort(Plants, SortedPlants),
-    % forall(member(Plant, SortedPlants), parse_plant_readings(Plant), retractall(plant_reading(Plant,_,_,_,_))).
     maplist(parse, SortedPlants).
 
 % parse/1
@@ -228,7 +225,7 @@ parse(Plant) :-
     parse_plant_readings(Plant),
     retractall(plant_reading(Plant,_,_,_,_)).
 
-% parse_forward/1
+% parse_plant_symptoms/1
 parse_plant_symptoms(Plant) :-
     all(Symptom, (plant_reading(Plant, _, SensorType, _, Symptom), SensorType = caption), PlantSymptoms),
     find_diagnoses(Plant, PlantSymptoms).
@@ -255,38 +252,19 @@ find_diagnoses(Plant, PlantSymptoms) :-
 explain_plant_diagnoses([]).
 explain_plant_diagnoses([H|T]) :-
     H = (Condition, Symptoms),
-    clause(problem(Problem), condition(Condition)),
+    problem_condition(Problem, Condition),
     atomic_concat(['^ diagnosis is of ', Condition, ' ', Problem, ' because of: '], Message),
     log(Message),
     maplist(logln, Symptoms),
     explain_plant_diagnoses(T).
 
-% health_status/2
-health_status(Plant, HealthStatus) :-
-    plant_status(Plant, SensorType, Reading),
-    clause(problem(Problem), reading(SensorType, Reading)),
-    clause(health_issue(Issue), problem(Problem)),
-    HealthStatus = Issue-Problem.
-health_status(Plant, HealthStatus) :-
-    plant_status(Plant, SensorType, Reading),
-    clause(problem(Problem), condition(Reading)),
-    clause(health_issue(Issue), problem(Problem)),
-    HealthStatus = Issue-Problem-Reading.
-health_status(Plant, HealthStatus) :-
-    plant_status(Plant, SensorType, Reading),
-    \+ clause(problem(Problem), reading(SensorType, Reading)),
-    \+ clause(problem(Problem), condition(Reading)),
-    HealthStatus = healthy.
-health_status(Plant, HealthStatus) :-
-    \+ plant_status(Plant, SensorType, Reading),
-    HealthStatus = unknown.
-
 % parse_plant_readings/1
 % Retrieves the SensorType associated with the Plant and starts the parsing
 parse_plant_readings(Plant) :-
-    all(SensorType, (Plant^plant_actuator(Plant, ActuatorID), ActuatorID^actuator(ActuatorID, SensorType,_,_)), SensorTypes),
+    all(SensorType, (Plant^plant_sensor(Plant, SensorID), sensor(SensorID, SensorType), SensorType \= caption), SensorTypes),
     log('- installed sensors '), logln(SensorTypes),
     forall(member(SensorType, SensorTypes), parse_plant_readings(Plant, SensorType)).
+parse_plant_readings(Plant).
 
 % parse_plant_readings/2
 parse_plant_readings(Plant, SensorType) :-
@@ -303,8 +281,6 @@ parse_plant_readings(Plant, SensorType) :-
     \+ plant_reading(Plant, _, SensorType, _, _),
     atomic_concat(['* ', SensorType, ' no reading'], Message),
     logln(Message).
-parse_plant_readings(Plant, SensorType) :-
-    logln('* parse_plant_readings something went awry').
 
 % reading_status/4
 reading_status(Plant, SensorType, Value, ReadingStatus) :-
@@ -324,22 +300,10 @@ reading_status(Plant, SensorType, Value, ReadingStatus) :-
     between(Min, Max, Value),
     ReadingStatus = normal.
 
-% plant_range_values/4
-plant_range_values(Plant, SensorType, Min, Max) :-
-    SensorType = temperature,
-    plant(Plant, Species, _),
-    species(Species, Min, Max).
-plant_range_values(Plant, SensorType, Min, Max) :-
-    SensorType = humidity,
-    plant(Plant, _, GrowthStage),
-    growth_humidity(GrowthStage, Min, Max).
-
 % actuator_start/3
 % There's no actuator on the plant
 actuator_start(Plant, _, _) :- 
     \+ plant_actuator(Plant, _),
-    % Message = ,
-    % write(Message),
     log(Plant, ' , no actuators').
 % There's no actuator of the right type (temp/hum)
 actuator_start(Plant, SensorType, _) :- 
@@ -390,6 +354,26 @@ actuator_forward(X) :-
 % greenhouse_status/0
 greenhouse_status :-
     logln('\nGreenhouse status:'),
-    all(health_status(Plant, HealthStatus), (plants(Plants), member(Plant, Plants), health_status(Plant, HealthStatus)), PlantsStatuses),
+    all(plant_health(Plant, Health), (plants(Plants), member(Plant, Plants), plant_health(Plant, Health)), PlantsStatuses),
     maplist(logln, PlantsStatuses),
     logln('\n').
+
+% plant_health/2
+plant_health(Plant, Health) :-
+    plant_status(Plant, SensorType, Reading),
+    clause(problem(Problem), reading(SensorType, Reading)),
+    issue_problem(Issue, Problem),
+    Health = Issue-Problem.
+plant_health(Plant, Health) :-
+    plant_status(Plant, SensorType, Reading),
+    problem_condition(Problem, Reading),
+    issue_problem(Issue, Problem),
+    Health = Issue-Problem-Reading.
+plant_health(Plant, Health) :-
+    plant_status(Plant, SensorType, Reading),
+    \+ clause(problem(Problem), reading(SensorType, Reading)),
+    \+ problem_condition(Problem, Reading),
+    Health = healthy.
+plant_health(Plant, Health) :-
+    \+ plant_status(Plant, SensorType, Reading),
+    Health = unknown.

@@ -61,14 +61,35 @@ kb_mode :- askif(fruition_mode(kb_mode)).
 % monitor_mode/0
 monitor_mode :- askif(fruition_mode(monitor_mode)).
 
-% signs/1
-signs(Signs) :- all(Sign, sign_location(Sign, _), Signs).
+% health_issues/1
+health_issues(HealthIssues) :- 
+    all(
+        Issue-Problem,
+        clause(health_issue(Issue), problem(Problem)),
+        HealthIssues).
+
+% conditions/1
+conditions(ProblemsConditions) :-
+    all(
+        Problem-Condition,
+        (
+            clause(health_issue(Issue), problem(Problem)),
+            clause(problem(Problem), condition(Condition))
+        ),
+        ProblemsConditions).
 
 % locations/1
 locations(Locations) :- all(Location, sign_location(_, Location), Locations).
 
+% signs/1
+signs(Signs) :- all(Sign, sign_location(Sign, _), Signs).
+
 % colors/1
 colors(Colors) :- all(Color, sign_color(_, Color), Colors).
+
+% treatments/1
+treatments(Treatments) :-
+    all(Condition-Treatment, treatment(Condition, Treatment), Treatments).
 
 % rules/1
 rules(Rules) :-
@@ -81,6 +102,14 @@ rules(Rules) :-
             conj_to_list(SymptomsConj, Symptoms)
         ),
         Rules).
+
+% problem_condition/2
+problem_condition(Problem, Condition) :-
+    clause(problem(Problem), condition(Condition)).
+
+% issue_problem/2
+issue_problem(Issue, Problem) :-
+    clause(health_issue(Issue), problem(Problem)).
 
 % write_message/1
 write_message(MessageCode) :-

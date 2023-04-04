@@ -48,7 +48,8 @@ user_input(Relation, UserChoice) :-
     show_options(Options),
     read(UserInput),
     input_choice(Options, UserInput, UserChoice),
-    write_message(option_selected), write(UserInput), write(': '), writeln(UserChoice), nl.
+    write_message(option_selected),
+    write(UserInput), write(': '), writeln(UserChoice), nl.
 
 % sign_location/1
 % Unifies Locations with the list of all possible locations in which the temporary stored sign can manifest.
@@ -139,12 +140,14 @@ explain(Diagnosis) :-
     Diagnosis = diagnosis(Condition, [ConditionSymptoms]),
     show_diagnosis(Condition, ConditionSymptoms),
     show_treatment(Condition).
+explain(Diagnosis) :-
+    Diagnosis \= diagnosis(Condition, [ConditionSymptoms]),
+    writeln_message(treatment_healthy).
 
 % show_diagnosis/2
 show_diagnosis(Condition, ConditionSymptoms) :-
     problem_condition(Problem, Condition),
-    status_problem(Status, Problem),
-    write_message(because_of), write(ConditionSymptoms), write_message(diagnosis_of), write(Status), write(' '), write(Problem), write(' - '), writeln(Condition).
+    write_message(because_of), write(ConditionSymptoms), write_message(diagnosis_of), write(Problem), write(' - '), writeln(Condition).
 
 % show_treatment/1
 show_treatment(Condition) :-
