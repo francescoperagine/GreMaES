@@ -129,13 +129,14 @@ has_symptoms :- symptom(_,_,_).
 % has_condition/0
 has_condition :- condition(_).
 
-% condition_symptoms/2 Unifies ConditionSymptoms with the right side of the condition rule
+% condition_symptoms/2
+% Unifies ConditionSymptoms with the right side of the condition rule
 condition_symptoms(Condition, ConditionSymptoms) :-
     condition(Condition),
     clause(condition(Condition), ConditionBody),
     conj_to_list(ConditionBody, ConditionSymptoms).
 
-% explain/1 If a diagnosis is reachehd, the plant is sick. The diagnosis is explained and the treatment is shown, if present.
+% explain/1 If a diagnosis is reached, the plant is sick. The diagnosis is explained and the treatment is shown, if present.
 explain(Diagnosis) :-
     Diagnosis = diagnosis(Condition, [ConditionSymptoms]),
     show_diagnosis(Condition, ConditionSymptoms),

@@ -111,6 +111,25 @@ problem_condition(Problem, Condition) :-
 issue_problem(Issue, Problem) :-
     clause(health_issue(Issue), problem(Problem)).
 
+% plants/1 - Gets all plants with installed sensors
+plants(SortedPlants) :-
+    all(Plant, plant_sensor(Plant, _), Plants),
+    sort(Plants, SortedPlants).
+
+% plants_reading_ranges/1 
+plants_reading_ranges(SortedPlants) :-
+    all(
+        Plant-Species-temperature_range-TemperatureMin-TemperatureMax-growth_humidity-GrowthStage-HumidityMin-HumidityMax,
+        (plant(Plant, Species, GrowthStage), species(Species, TemperatureMin, TemperatureMax), growth_humidity(GrowthStage, HumidityMin, HumidityMax)),
+        Plants
+    ),
+    sort(Plants, SortedPlants).
+
+% timestamp/1
+timestamp(T) :- 
+    datime(datime(Year, Month, Day, Hour, Minute, Second)),
+    T = timestamp(Year-Month-Day, Hour:Minute:Second).
+
 % write_message/1
 write_message(MessageCode) :-
     message_code(MessageCode, Message),

@@ -26,6 +26,7 @@ sign_probability(X) :- X is 1.
 
 % monitor_mode_start/0
 monitor_mode_start :-
+    logger_init,
     greenhouse_init,
     !,
     monitor_mode_forward,
@@ -59,29 +60,10 @@ monitor_cleanup :-
     retractall(plant_reading(_,_,_,_,_)),
     retractall(actuator_status(_,_)).
 
-% timestamp/1
-timestamp(T) :- 
-    datime(datime(Year, Month, Day, Hour, Minute, Second)),
-    T = timestamp(Year-Month-Day, Hour:Minute:Second).
-
 % actuators_init/0
 actuators_init :-
     all(actuator_status(Actuator, off), plant_actuator(Plant, Actuator), ActuatorsStatus),
     maplist(assertz, ActuatorsStatus).
-
-% plants/1 - Gets all plants with installed sensors
-plants(SortedPlants) :-
-    all(Plant, plant_sensor(Plant, _), Plants),
-    sort(Plants, SortedPlants).
-
-% plants_reading_ranges/1 
-plants_reading_ranges(SortedPlants) :-
-    all(
-        Plant-Species-temperature_range-TemperatureMin-TemperatureMax-growth_humidity-GrowthStage-HumidityMin-HumidityMax,
-        (plant(Plant, Species, GrowthStage), species(Species, TemperatureMin, TemperatureMax), growth_humidity(GrowthStage, HumidityMin, HumidityMax)),
-        Plants
-    ),
-    sort(Plants, SortedPlants).
 
 % monitor_loop_start/0
 monitor_loop_start :- 
