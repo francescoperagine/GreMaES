@@ -38,10 +38,8 @@ ask_symptom_forward(Sign, Location) :-
     \+ all(Color, sign_color(Sign, Color), Colors),
     assert_symptom(curr, Location, Sign, none).
 % assert_symptom/4
-% Decomposes the symptom in single facts
 assert_symptom(Plant, Location, Sign, Color) :-
-    Fact = fact(manifests(Plant, symptom(Location, Sign, Color))),
-    assert_fact(Fact).
+    assert_fact(fact(manifests(Plant, symptom(Location, Sign, Color)))).
     
 % user_input/2
 % Unifies Relation with a list of options, reads the user selection from that list and returns it as UserChoice.

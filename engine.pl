@@ -8,11 +8,14 @@
 
 debug(off).
 
-assert_fact(Fact):-                                  % Assert fact if not already true
-    \+ (Fact),!,                                   % Not already true, so stop backtracking
-    asserta(Fact).                              
-assert_fact(_).                                      % Fact is already true, so do nothing
+% assert_fact/1
+assert_fact(Fact):-
+    \+ (Fact),
+    asserta(Fact),
+    !.                              
+assert_fact(_).
 
+% forward/0
 forward :- done, listing(history).
 forward :- 
     fact(Fact),
@@ -20,6 +23,8 @@ forward :-
     retract(fact(Fact)),
     assertz(usedfact(Fact)),
     forward.
+
+% done/0
 done :- not(fact(X)).
 
 % pursuit/1
@@ -46,9 +51,9 @@ delete_fact(X,[],[]).
 delete_fact(X,[X|L],M) :- delete_fact(X,L,M).
 delete_fact(X,[Y|L],[Y|M]) :- 
     not(X=Y),
-    delete_fact(X,L,M),
-    (debug(on) -> (write('New conditions '), maplist(writeln,M)) ; true).
+    delete_fact(X,L,M).
 
+% new_rule/2
 % When the right-hand sided of a rule is empty a new fact is made, otherwise the rule is updated.
 % asserta forces the focus-of-attention on new facts, therefore last found facts will be pursued first.
 new_rule(RuleID,Head,[]) :-
@@ -60,9 +65,9 @@ new_rule(RuleID,Head,Conditions) :-
     asserta(rule(RuleID,Head,Conditions)),
     (debug(on) -> writeln(rule(RuleID,Head,Conditions)) ; true).
 
-
-save_history(Subject,Object) :-
-    not(history(Subject,Object)),
-    assertz(history(Subject,Object)),
+% save_history/2
+save_history(Item,Action) :-
+    not(history(Item,Action)),
+    assertz(history(Item,Action)),
     !.
 save_history(_,_).
