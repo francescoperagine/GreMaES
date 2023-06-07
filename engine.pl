@@ -10,6 +10,15 @@
 
 debug(off).
 
+% assert_fact/1
+assert_fact(Fact):-
+    \+ (fact(_,Fact)),
+    new_index(ID),
+    asserta(fact(ID,Fact)),
+    add_fact_history(ID),
+    !.                              
+assert_fact(_).
+
 % new_index/1
 new_index(NewID) :-
     not(last_index(_)),
@@ -23,28 +32,18 @@ new_index(NewID) :-
     retract(last_index(_)),
     assert(last_index(NewID)).
 
-% assert_fact/1
-assert_fact(Fact):-
-    \+ (fact(_,Fact)),
-    new_index(ID),
-    asserta(fact(ID,Fact)),
-    assertz(fact_history(ID,[])),
-    !.                              
-assert_fact(_).
-
+% add_fact_history/1
+add_fact_history(ID) :-
+    assertz(fact_history([ID])).
 % add_fact_history/2
 add_fact_history(Prev,Curr) :-
-    fact_history(FactID,History),
-    member(Prev,History),
-    retract(fact_history(FactID,History)),
-    assertz(fact_history(FactID,[Curr|History])).
-add_fact_history(Prev,Curr) :-
-    fact_history(Prev,[]),
-    retract(fact_history(Prev,_)),
-    assertz(fact_history(Prev,[Curr])).
+    fact_history(History),
+    memberchk(Prev,History),
+    retract(fact_history(History)),
+    assertz(fact_history([Curr|History])).
 
 % forward/0
-forward :- done, listing(fact_history).
+forward :- done, list_facts_history.
 forward :- 
     fact(FactID,Fact),
     not(pursuit(FactID,Fact)),
@@ -54,6 +53,10 @@ forward :-
 
 % done/0
 done :- not(fact(_,_)).
+
+% % list_facts_history/0
+list_facts_history :-
+    all(H2, (fact_history(H1), reverse(H1,H2)), Hs), maplist(writeln, Hs).
 
 % pursuit/2
 pursuit(FactID,Fact) :-
