@@ -56,7 +56,20 @@ done :- not(fact(_,_)).
 
 % % list_facts_history/0
 list_facts_history :-
-    all(H2, (fact_history(H1), reverse(H1,H2)), Hs), maplist(writeln, Hs).
+    all([P|H2], 
+            (fact_history(H1),
+            usedfact(ID,manifests(P,S)),
+            memberchk(ID,H),
+            reverse(H1,H2)),
+        Hs),
+    maplist(writeln,Hs).
+
+% % list_facts_history/1
+list_plant_history(P,H1) :-
+    usedfact(ID,manifests(P,S)),
+    fact_history(H),
+    memberchk(ID,H),
+    reverse(H,H1).
 
 % pursuit/2
 pursuit(FactID,Fact) :-
