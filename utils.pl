@@ -5,6 +5,7 @@
 ask_menu(Menu, Selection) :-
     write('Select an option:'), nl,
     display_menu(Menu, 1),
+    repeat,
     read(Index),
     (nth1(Index, Menu, Selection) -> true ; (writeln_message(not_recognized_value), fail)).
 
@@ -16,6 +17,7 @@ display_menu([Option|Rest], Index) :-
     display_menu(Rest, NewIndex).
 
 % timestamp/1
+% Returns the current timestamp
 timestamp(T) :- 
     datime(datime(Year, Month, Day, Hour, Minute, Second)),
     T = timestamp(Year-Month-Day, Hour:Minute:Second).
