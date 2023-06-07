@@ -27,7 +27,8 @@ init_cleanup :-
 set_fruition_mode :- 
     mode_user,
     ensure_loaded(mode_user),
-    user_start.
+    user_start,
+    forward.
 set_fruition_mode :-
     \+ (mode_user),
     mode_kb,

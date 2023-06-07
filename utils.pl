@@ -1,11 +1,12 @@
 :- use_module(library(system)).
+:- use_module(library(apply_macros)).
 
 % Predicate to display a menu and get user's selection
 ask_menu(Menu, Selection) :-
     write('Select an option:'), nl,
     display_menu(Menu, 1),
     read(Index),
-    nth1(Index, Menu, Selection).
+    (nth1(Index, Menu, Selection) -> true ; (writeln_message(not_recognized_value), fail)).
 
 % Helper predicate to display the menu options with their indices
 display_menu([], _).

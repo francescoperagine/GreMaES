@@ -39,65 +39,8 @@ ask_symptom_forward(Sign, Location) :-
     assert_symptom(curr, Location, Sign, none).
 % assert_symptom/4
 assert_symptom(Plant, Location, Sign, Color) :-
-    assert_fact(fact(manifests(Plant, symptom(Location, Sign, Color)))).
+    assert_fact(manifests(Plant, symptom(Location, Sign, Color))).
     
-% user_input/2
-% Unifies Relation with a list of options, reads the user selection from that list and returns it as UserChoice.
-% user_input(Relation, UserChoice) :-
-%     call(Relation, Options), 
-%     show_title(Relation), nl,
-%     show_options(Options),
-%     read(UserInput),
-%     input_choice(Options, UserInput, UserChoice),
-%     write_message(option_selected),
-%     write(UserInput), write(': '), writeln(UserChoice), nl.
-
-% sign_location/1
-% Unifies Locations with the list of all possible locations in which the temporary stored sign can manifest.
-% sign_locations(Locations) :-
-%     current_sign(Sign),
-%     all(Location, sign_location(Sign, Location), Locations).
-
-% % sign_colors/1
-% sign_colors(Colors) :-
-%     current_sign(Sign),
-%     all(Color, sign_color(Sign, Color), Colors).
-
-% show_title/1 - Shows the title if present, otherwise prints the relation's name.
-% show_title(Relation) :- 
-%     writeln_message(Relation).
-% show_title(Relation) :-
-%     \+ writeln_message(Relation),
-%     writeln(Relation).
-
-% show_options/1
-% Shows a numbered list of ordered options, stripping atom names from their underscores.
-% show_options(Options) :- 
-%     show_options(Options, 1),
-%     !. 
-
-% % show_options/2
-% show_options([], _).
-% show_options([H|T], N) :-
-%     atomic_concat([N, '. ', H], A),
-%     writeln(A),
-%     N1 is N + 1,
-%     show_options(T, N1).
-
-% input_choice/3 - The entry number UserInput of list Options unifies with list entry UserChoice.
-% input_choice(Options, UserInput, UserChoice) :-
-%     integer(UserInput),
-%     nth1(UserInput, Options, UserChoice),
-%     validate_input(Options, UserChoice).
-
-% % validate_input/2
-% validate_input(Options, UserChoice) :- 
-%     member(UserChoice, Options),
-%     !.
-% validate_input(Options, UserChoice) :-
-%     not(member(UserChoice, Options)),
-%     writeln_message(not_recognized_value).
-
 % user_diagnosis/0
 % No symptoms case
 user_diagnosis :-
