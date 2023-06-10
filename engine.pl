@@ -2,74 +2,47 @@
 :- use_module(library(apply_macros)).
 :- use_module(library(ordsets)).
 
-:- dynamic fact/2.
-:- dynamic fact_history/2.
-:- dynamic usedfact/2.
-:- dynamic rule/3.
-:- leash(none).
+% full_forward/0
+full_forward :- forward,doall(handle_not),forward.
 
-debug(off).
-
-% assert_fact/1
-assert_fact(Fact):-
-    \+ (fact(_,Fact)),
-    new_index(ID),
-    asserta(fact(ID,Fact)),
-    add_fact_history(ID),
-    !.                              
-assert_fact(_).
-
-% new_index/1
-new_index(NewID) :-
-    not(last_index(_)),
-    all(ID, rule(ID,_,_), IDs),
-    max_list(IDs, LastID),
-    NewID is LastID + 1,
-    assert(last_index(NewID)).
-new_index(NewID) :-
-    last_index(LastID),
-    NewID is LastID + 1,
-    retract(last_index(_)),
-    assert(last_index(NewID)).
-
-% add_fact_history/1
-add_fact_history(ID) :-
-    assertz(fact_history([ID])).
-% add_fact_history/2
-add_fact_history(Prev,Curr) :-
-    fact_history(History),
-    memberchk(Prev,History),
-    retract(fact_history(History)),
-    assertz(fact_history([Curr|History])).
+% handle_not/0
+handle_not :- rule(L,R),member(not(X),R),not(usedfact(X)),
+  not(fact(X)),delete(not(X),R2),new_rule(L,R2).
 
 % forward/0
-forward :- done, list_facts_history.
+forward :- done.
 forward :- 
-    fact(FactID,Fact),
-    not(pursuit(FactID,Fact)),
-    retract(fact(FactID,Fact)),
-    assertz(usedfact(FactID,Fact)),
+    fact(ID,Fact),
+    not(pursuit(ID,Fact)),
+    save_usedfact(ID,Fact),
     forward.
+
+% doall/1
+doall(P) :- not(alltried(P)).
+
+% alltried/1
+alltried(P) :- call(P),fail.
 
 % done/0
 done :- not(fact(_,_)).
 
-% % list_facts_history/0
-list_facts_history :-
-    all([P|H2], 
-            (fact_history(H1),
+% history/0
+history :-
+    all([P|H2],
+            (fact_history(P,H1),
             usedfact(ID,manifests(P,S)),
-            memberchk(ID,H),
+            memberchk(ID,H1),
             reverse(H1,H2)),
         Hs),
     maplist(writeln,Hs).
-
-% % list_facts_history/1
-list_plant_history(P,H1) :-
-    usedfact(ID,manifests(P,S)),
-    fact_history(H),
-    memberchk(ID,H),
-    reverse(H,H1).
+% history/1
+history(Hs) :-
+    all([P|H2],
+            (fact_history(P,H1),
+            usedfact(ID,manifests(P,S)),
+            memberchk(ID,H1),
+            reverse(H1,H2)),
+        Hs).
 
 % pursuit/2
 pursuit(FactID,Fact) :-
@@ -77,7 +50,7 @@ pursuit(FactID,Fact) :-
     rule_pursuit(FactID,Fact,RuleID,Head,Conditions),
     fail.
 % rule_pursuit/5
-% Searches through rules conditions, deleting entries that match the fact F
+% Searches through rules conditions,deleting entries that match the fact F
 rule_pursuit(FactID,Fact,RuleID,Head,Conditions) :-
     match_conditions(Fact,Conditions),
     delete_fact(Fact,Conditions,ConditionsNew),
@@ -97,16 +70,14 @@ delete_fact(X,[Y|L],[Y|M]) :-
     delete_fact(X,L,M).
 
 % new_rule/4
-% When the right-hand sided of a rule is empty a new fact is made, otherwise the rule is updated.
-% asserta forces the focus-of-attention on new facts, therefore last found facts will be pursued first.
-new_rule(FactID,_,Head,[]) :-
-    not(fact(_,Head)),
-    new_index(NewID),
-    asserta(fact(NewID,Head)),
-    add_fact_history(FactID,NewID),
-    (debug(on) -> writeln(Head) ; true).
+% When the right-hand sided of a rule is empty a new fact is made,otherwise the rule is updated.
+new_rule(FactID,RuleID,Head,[]) :-
+    save_fact(Head,FactIDNew),
+    save_trail(FactID,[RuleID,FactIDNew]).
 new_rule(FactID,RuleID,Head,Conditions) :-
     not(Conditions=[]),
-    asserta(rule(RuleID,Head,Conditions)),
-    add_fact_history(FactID,RuleID),
-    (debug(on) -> writeln(rule(RuleID,Head,Conditions)) ; true).
+    save_rule(RuleID,Head,Conditions),
+    save_trail(FactID,RuleID).
+new_rule(_,RuleID,Head,Conditions) :-
+    fact(_,Head),
+    Conditions=[].

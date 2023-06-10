@@ -20,6 +20,6 @@ indexing.
 index(CurrentRuleID,Head) :-  
 	rule(RuleID,_,Conditions,_,_),
 	CurrentRuleID \== RuleID,
-    rule_check(CurrentRuleID, RuleID, Head, Conditions),
+    rule_check(CurrentRuleID,RuleID,Head,Conditions),
 	fail.
 index(_,_).
