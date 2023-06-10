@@ -1,6 +1,6 @@
 :- prolog_flag(unknown,_,fail).
 
-% :- dynamic asked/2.
+:- dynamic asked/2.
 
 :- leash(none).
 
@@ -62,56 +62,6 @@ kb_mode :- askif(fruition_mode(kb_mode)).
 % mode_monitor/0
 mode_monitor :- askif(fruition_mode(mode_monitor)).
 
-% % health_issues/1
-% health_issues(HealthIssues) :- 
-%     all(
-%         Issue-Problem,
-%         clause(health_issue(Issue),problem(Problem)),
-%         HealthIssues).
-
-% % conditions/1
-% conditions(ProblemsConditions) :-
-%     all(
-%         Problem-Condition,
-%         (
-%             clause(health_issue(Issue),problem(Problem)),
-%             clause(problem(Problem),condition(Condition))
-%         ),
-%         ProblemsConditions).
-
-% locations/1
-locations(Locations) :- all(Location,sign_location(_,Location),Locations).
-
-% signs/1
-signs(Signs) :- all(Sign,sign_location(Sign,_),Signs).
-
-% colors/1
-colors(Colors) :- all(Color,sign_color(_,Color),Colors).
-
-% treatments/1
-treatments(Treatments) :-
-    all(Condition-Treatment,treatment(Condition,Treatment),Treatments).
-
-% % rules/1
-% rules(Rules) :-
-%     all(
-%         (Issue,Problem,Condition,Symptoms),
-%         (
-%             clause(health_issue(Issue),problem(Problem)),
-%             clause(problem(Problem),condition(Condition)),
-%             clause(condition(Condition),SymptomsConj),
-%             conj_to_list(SymptomsConj,Symptoms)
-%         ),
-%         Rules).
-
-% % problem_condition/2
-% problem_condition(Problem,Condition) :-
-%     clause(problem(Problem),condition(Condition)).
-
-% % issue_problem/2
-% issue_problem(Issue,Problem) :-
-%     clause(health_issue(Issue),problem(Problem)).
-
 % plants/1 - Gets all plants with installed sensors
 plants(SortedPlants) :-
     all(Plant,plant_sensor(Plant,_),Plants),
@@ -125,6 +75,3 @@ plants_reading_ranges(SortedPlants) :-
         Plants
     ),
     sort(Plants,SortedPlants).
-
-
-

@@ -1,8 +1,8 @@
 :- use_module(library(lists)).
 :- use_module(library(apply_macros)).
 
-:- dynamic fact/1.
-:- dynamic usedfact/1.
+% :- dynamic fact/1.
+% :- dynamic usedfact/1.
 
 % user_start/0
 user_start :-
@@ -30,14 +30,15 @@ ask_symptom :-
     ask_menu(Signs,Sign),
     all(Location,sign_location(Sign,Location),Locations),
     length(Locations,L),
-    (L > 1 -> ask_menu(Locations,Location) ; nth1(1,Locations,Location)),
-    write(Sign),write(' located on '),write(Location),writeln(' has been selected'),
+    (L > 1 -> ask_menu(Locations,Location) ; (nth1(1,Locations,Location), write(Location), write(' is the only available option'))),
+    write(Sign),write(' located on '),write(Location),
     ask_symptom_forward(Sign,Location).
 % ask_symptom_forward/2
 ask_symptom_forward(Sign,Location) :-
     all(Color,sign_color(Sign,Color),Colors),
-    ask_menu(Colors,Color),
-    write(Sign),write(' manifests '),write(Color),writeln(' coloring'),
+    length(Colors,L),
+    (L > 1 -> ask_menu(Colors,Color) ; nth1(1,Colors,Color), write(Color), write(' is the only available option')),
+    write(Sign),write(' with '),write(Color),writeln(' coloring'),
     save_symptom(curr,symptom(Location,Sign,Color)).
 ask_symptom_forward(Sign,Location) :-
     \+ all(Color,sign_color(Sign,Color),Colors),
