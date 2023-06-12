@@ -1,13 +1,11 @@
 :- use_module(library(lists)).
 :- use_module(library(apply_macros)).
 
-% :- dynamic fact/1.
-% :- dynamic usedfact/1.
+:- dynamic problem/1.
+:- dynamic issue/1.
 
 % user_start/0
 user_start :-
-    retractall(fact(_)),
-    retractall(usedfact(_)),
     symptomatology,
     forward,
     user_diagnosis.
@@ -15,7 +13,7 @@ user_start :-
 % symptomatology/0
 symptomatology :-
     repeat,
-    ask_symptom,
+    build_symptom,
     !,
     not(once_again).
 
@@ -23,28 +21,37 @@ symptomatology :-
 once_again :- askif(new_symptom).
 
 % ask_symptom/0
-% Asks the user to provide informations about the manifested symptoms
-ask_symptom :- 
+% Initializes the questioning for the user to provide informations about the manifested symptoms
+build_symptom :-
     retractall(asked(new_symptom,_)),
-    all(Sign,sign_location(Sign,_),Signs),
-    ask_menu(Signs,Sign),
+    ask_sign(Sign),
+    ask_location(Sign,Location),
+    ask_color(Sign,Color),
+    save_observation(curr,symptom(Location,Sign,Color)).
+    
+% Reads the previously stored signs' list and initializes the menu for the selection from the list of elements
+% Signs are independent from each other, whereas locations and colors are always dependent on signs.
+% All signs are manifested on a location, but not all the signs show a peculiar color.
+% If the options' lists are reduced to only one element, it's selected by default.
+
+% ask_sign/1 (-Sign)
+ask_sign(Sign) :-
+    signs(Signs),
+    ask_menu(Signs,Sign).
+% ask_location/2 (+Sign,-Location)
+ask_location(Sign,Location) :-
     all(Location,sign_location(Sign,Location),Locations),
     length(Locations,L),
-    (L > 1 -> ask_menu(Locations,Location) ; (nth1(1,Locations,Location), write(Location), write(' is the only available option'))),
-    write(Sign),write(' located on '),write(Location),
-    ask_symptom_forward(Sign,Location).
-% ask_symptom_forward/2
-ask_symptom_forward(Sign,Location) :-
+    (L > 1 -> ask_menu(Locations,Location) ; nth1(1,Locations,Location)).
+% ask_color (+Sign,-Color)
+ask_color(Sign,Color) :-
     all(Color,sign_color(Sign,Color),Colors),
     length(Colors,L),
-    (L > 1 -> ask_menu(Colors,Color) ; nth1(1,Colors,Color), write(Color), write(' is the only available option')),
-    write(Sign),write(' with '),write(Color),writeln(' coloring'),
-    save_symptom(curr,symptom(Location,Sign,Color)).
-ask_symptom_forward(Sign,Location) :-
-    \+ all(Color,sign_color(Sign,Color),Colors),
-    write(Sign),writeln(' has no color.'),nl,
-    save_symptom(curr,symptom(Location,Sign,none)).
-    
+    (L > 1 -> ask_menu(Colors,Color) ; nth1(1,Colors,Color)).
+% ask_color (+Sign,-Color)
+ask_color(Sign,none) :-
+    \+ sign_color(Sign,_).
+
 % user_diagnosis/0
 % No symptoms case
 user_diagnosis :-
@@ -58,33 +65,4 @@ user_diagnosis :-
 % If there are clear conditions,explains them
 user_diagnosis :-
     usedfact(_,condition(_,_)),
-    explain_diagnosis.
-
-% explain_diagnosis/0
-explain_diagnosis :-
-    history(HistoriesList),
-    member([Plant|History],HistoriesList),
-    plant_history(Plant,History,Facts),
-    all(Condition,(
-        member(ID,History),
-        usedfact(ID,condition(Plant,Condition))
-    ),Conditions),
-    (mode_user,need_explanation -> (writeln('\nReasoning performed by the engine (ID-Inference step):\n'),maplist(writeln,Facts)) ; true),
-    forall(member(Condition,Conditions),show_treatment(Condition)).
-
-% need_explanation/0
-need_explanation :- askif(need_explanation).
-
-% show_treatment/1
-show_treatment(Condition) :-
-    problem_condition(nutrient_deficiency,Condition),
-    writeln_message(missing_nutrient).
-show_treatment(Condition) :-
-    \+ problem_condition(nutrient_deficiency,Condition),
-    \+ treatment(Condition,_),
-    writeln_message(treatment_none).
-show_treatment(Condition) :-
-    \+ problem_condition(nutrient_deficiency,Condition),
-    all(Treatment,treatment(Condition,Treatment),Treatments),
-    nl,write('* How to treat '),write(Condition),writeln(':'),
-    maplist(writeln,Treatments).
+    diagnosis.

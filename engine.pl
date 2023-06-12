@@ -2,12 +2,19 @@
 :- use_module(library(apply_macros)).
 :- use_module(library(ordsets)).
 
-% full_forward/0
-full_forward :- forward,doall(handle_not),forward.
+% engine_init/0
+engine_init :-
+    not(last_index(_)),
+    all(ID,rule(ID,_,_),IDs),
+    max_list(IDs,LastID),
+    NextID is LastID + 1,
+    save_index(NextID).
 
-% handle_not/0
-handle_not :- rule(L,R),member(not(X),R),not(usedfact(X)),
-  not(fact(X)),delete(not(X),R2),new_rule(L,R2).
+% next_index/1
+next_index(NextID) :-
+    last_index(LastID),
+    NextID is LastID + 1,
+    save_index(NextID).
 
 % forward/0
 forward :- done.
@@ -17,49 +24,23 @@ forward :-
     save_usedfact(ID,Fact),
     forward.
 
-% doall/1
-doall(P) :- not(alltried(P)).
-
-% alltried/1
-alltried(P) :- call(P),fail.
-
 % done/0
 done :- not(fact(_,_)).
-
-% history/0
-history :-
-    all([P|H2],
-            (fact_history(P,H1),
-            usedfact(ID,manifests(P,S)),
-            memberchk(ID,H1),
-            reverse(H1,H2)),
-        Hs),
-    maplist(writeln,Hs).
-% history/1
-history(Hs) :-
-    all([P|H2],
-            (fact_history(P,H1),
-            usedfact(ID,manifests(P,S)),
-            memberchk(ID,H1),
-            reverse(H1,H2)),
-        Hs).
 
 % pursuit/2
 pursuit(FactID,Fact) :-
     rule(RuleID,Head,Conditions),
+    functor(Head,condition,_),
     rule_pursuit(FactID,Fact,RuleID,Head,Conditions),
     fail.
 % rule_pursuit/5
 % Searches through rules conditions,deleting entries that match the fact F
 rule_pursuit(FactID,Fact,RuleID,Head,Conditions) :-
-    match_conditions(Fact,Conditions),
+    match(Fact,Conditions),
     delete_fact(Fact,Conditions,ConditionsNew),
     new_rule(FactID,RuleID,Head,ConditionsNew).
-
-% match_conditions/2
-% Checks whether the fact is within rules' conditions
-match_conditions(X,[X|L]).
-match_conditions(X,[Y|L]) :- match_conditions(X,L).
+% rule_pursuit(FactID,Fact,RuleID,Head,Conditions) :-
+%     \+ functor(Conditions,condition,_), !.
 
 % delete_fact/3
 % Unifies the fact by binding the variable within the conditions and it always succedees

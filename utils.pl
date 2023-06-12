@@ -1,20 +1,52 @@
 :- use_module(library(system)).
 :- use_module(library(apply_macros)).
+:- use_module(library(ordsets)).
 
-index_init :-
-    next_index(X).
+:- dynamic asked/2.
 
-% next_index/1
-next_index(NextID) :-
-    not(last_index(_)),
-    all(ID,rule(ID,_,_),IDs),
-    max_list(IDs,LastID),
-    NextID is LastID + 1,
-    save_index(NextID).
-next_index(NextID) :-
-    last_index(LastID),
-    NextID is LastID + 1,
-    save_index(NextID).
+debug(off).
+
+% is_debug/0
+is_debug :- debug(on).
+
+% utils_init
+% Initializes the most frequently used lists to improve performances and improve tracing readeability
+utils_init :-
+    signs_init,
+    plants_init.
+
+% signs/0
+signs_init :-
+    all(Sign,sign_location(Sign,_),Signs),
+    delete(Signs,'none',Signs1),
+    list_to_ord_set(Signs1,Set),
+    save_ln(signs(Set)).
+
+% plants_init/0
+plants_init :-
+    all(Plant,plant_sensor(Plant,_),Plants),
+    list_to_ord_set(Plants,Set),
+    save_ln(plants(Set)).
+
+% history/0
+history :-
+    all([P|H2],
+            (fact_history(P,H1),
+            usedfact(ID,manifests(P,S)),
+            memberchk(ID,H1),
+            reverse(H1,H2)),
+        Hs),
+    maplist(writeln,Hs).
+% history/1
+history(Hs) :-
+    all([P|H2],
+            (fact_history(P,H1),
+            usedfact(ID,manifests(P,S)),
+            memberchk(ID,H1),
+            reverse(H1,H2)),
+        Hs).
+
+
 
 % Predicate to display a menu and get user's selection
 ask_menu(Menu,Selection) :-
@@ -46,8 +78,12 @@ plant_history_id(P,H1) :-
     reverse(H,H1).
 
 % plant_history/3
-plant_history(P,H,As) :-
-    plant_history_id(P,H),all(X-A,(member(X,H),(usedfact(X,A) ; (rule(X,(Head),Body),A = Head-Body))),As).
+plant_history(Plant,History,Facts) :-
+    plant_history_id(Plant,History),
+    all(X-Fact,(
+        member(X,History),
+        (usedfact(X,Fact) ; (rule(X,(Head),Body),Fact = Head-Body))
+        ),Facts).
 
 % timestamp/1
 % Returns the current timestamp
@@ -55,29 +91,25 @@ timestamp(T) :-
     datime(datime(Year,Month,Day,Hour,Minute,Second)),
     T = timestamp(Year-Month-Day,Hour:Minute:Second).
 
-% write_message/1
+% write_message/1 (+MessageCode)
 write_message(MessageCode) :-
     message_code(MessageCode,Message),
     write(Message).
 % writeln_message/1
 writeln_message(MessageCode) :-
-    message_code(MessageCode,Message),
-    writeln(Message).
+    write_message(MessageCode),nl.
 
-% match/2 Checks whether every member of L1 is in L2
-match(L1,L2):- forall(member(X,L1),member(X,L2)).
+% match/2 (+X,+L)
+% Checks whether the X matches any element within L
+match(X,[X|L]).
+match(X,[Y|L]) :- match(X,L).
 
-% conj_to_list/2
-conj_to_list((H,C),[H|T]) :-
-    !,
-    conj_to_list(C,T).
-conj_to_list(H,[H]).
-
-% list_to_conj/2
-list_to_conj([H|T],(H,C)) :-
-    !,
-    list_to_conj(T,C).
-list_to_conj([H],H).
+% match/2 (+L1,+L1)
+% Checks every member of L1 in L2
+match([], _).
+match([X|L1], L2) :- 
+    member(X, L2),
+    match(L1, L2).
 
 % askif/1
 askif(Q) :-
