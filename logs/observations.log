@@ -1,0 +1,20 @@
+2023-06-18T18:08:23:Z,p3,temperature,t15,22,normal
+2023-06-18T18:08:23:Z,sunflower,humidity,h12,56,high
+2023-06-18T18:08:23:Z,p2,caption,c14,symptom(all,white powdery substance,none)
+2023-06-18T18:08:23:Z,spatafillo,temperature,t17,17,low
+2023-06-18T18:08:23:Z,p2,humidity,h14,59,normal
+2023-06-18T18:08:23:Z,p4,caption,c16,symptom(fruits,clear gummy substance,none)
+2023-06-18T18:08:23:Z,spatafillo,temperature,t17,22,normal
+2023-06-18T18:08:23:Z,trinidad1,humidity,h11,86,high
+2023-06-18T18:08:23:Z,p2,caption,c14,symptom(leaves,flies,white)
+2023-06-18T18:08:23:Z,p3,humidity,h15,72,high
+2023-06-18T18:08:26:Z,p1,humidity,h13,78,high
+2023-06-18T18:08:26:Z,p1,humidity,h13,77,high
+2023-06-18T18:08:26:Z,p3,temperature,t15,28,high
+2023-06-18T18:08:26:Z,p3,caption,c15,symptom(leaves,necrotic lesions,none)
+2023-06-18T18:08:26:Z,p4,temperature,t16,16,normal
+2023-06-18T18:08:26:Z,p3,humidity,h15,61,normal
+2023-06-18T18:08:26:Z,sunflower,humidity,h12,33,low
+2023-06-18T18:08:26:Z,p4,caption,c16,symptom(leaves,cutworms under leaves,none)
+2023-06-18T18:08:26:Z,p2,temperature,t14,27,high
+2023-06-18T18:08:26:Z,spatafillo,temperature,t17,28,high

@@ -15,11 +15,11 @@ goodbye :-
     writeln('See you next time. FP.').
 
 question_code(fruition_mode(mode_user),'Do you want to perform a diagnostic evaluation of the health status of a plant').
-explanation(fruition_mode(mode_user),'Provide the symptoms that the plant exibits to understand if it\'s affected by any problem and to get eventual treatment instructions').
-question_code(fruition_mode(mode_kb),'Do you want to explore all the Knowledge Base facts').
-explanation(fruition_mode(mode_kb),'Shows all the informations about health problems,symptoms,treatments').
+% explanation(fruition_mode(mode_user),'Provide the symptoms that the plant exibits to understand if it\'s affected by any problem and to get eventual treatment instructions').
+question_code(fruition_mode(mode_kb),'Do you want to explore the Knowledge Base').
+% explanation(fruition_mode(mode_kb),'Shows all the informations about health problems,symptoms,treatments').
 question_code(fruition_mode(mode_monitor),'Do you want to start the monitor mode').
-explanation(fruition_mode(mode_monitor),'Simulates the use of devices to test the automations of the system').
+% explanation(fruition_mode(mode_monitor),'Simulates the use of devices to test the automations of the system').
 question_code(debug_mode,'Do you want to proceed with debug mode').
 question_code(start_again,'\nWould you like to run the program again').
 question_code(new_symptom,'Would you like to register a new symptom').
@@ -36,8 +36,8 @@ message_code(yes_or_no,'Please answer yes or no.').
 message_code(no_condition,'There is no condition to treat.').
 message_code(no_explanation,'There is no explanation for this.').
 message_code(no_symptom,'There are no observed symptoms.').
-message_code(no_actuator,'There is no suitable actuator for ').
-message_code(no_plant_actuator,'There is no actuator for plant ').
+message_code(no_actuators,'There are no connected actuators for plant ').
+message_code(no_plant_actuator,'There are no suitable actuators for ').
 message_code(sign_locations,'Which location is affected by the problem?').
 message_code(signs,'How is the problem manifested?').
 message_code(sign_colors,'What color does it have?').
@@ -47,6 +47,6 @@ message_code(due_from,',could be due from ').
 message_code(option_selected,'You have selected option n.').
 message_code(missing_nutrient,'Treatment: provide the missing nutrient to the plant.').
 message_code(treatment,'* Treatment: ').
-message_code(treatment_none,'* There a no treatments for ').
+message_code(treatment_none,'* There are no treatments for ').
 
 message_code(no_type_actuator,'There is no actuator for that type').

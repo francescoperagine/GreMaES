@@ -1,6 +1,6 @@
 % kb_start/0
 kb_start :- 
-    L = [health_issues,conditions,locations,signs,colors,treatments,rules],
+    L = [rules,treatments],
     maplist(kb_browse,L).
 
 % kb_browse/1
@@ -13,11 +13,9 @@ kb_browse(X) :-
     
 % browse/1
 browse(X) :-
-    X \= rules,
-    writeln(X),
-    call(X,L),
-    maplist(writeln,L).
-browse(X) :-
     X = rules,
-    rules(L),
-    maplist(writeln,L).
+    listing(rule).
+browse(X) :-
+    X = treatments,
+    all(Condition-Treatment,treatment(Condition,Treatment),Treatments),
+    maplist(writeln,Treatments).

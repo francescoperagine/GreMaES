@@ -1,33 +1,42 @@
-:- use_module(library(lists)).
-
-:- dynamic debug/1.
-:- dynamic last_index/1.
-:- dynamic fact/2.
-:- dynamic usedfact/2.
-:- dynamic fact_history/2.
-:- dynamic rule/3.
 :- dynamic actuator_status/2.
+:- dynamic asked/2.
+:- dynamic debug/1.
+:- dynamic fact/2.
+:- dynamic fact_history/2.
+:- dynamic last_index/1.
+:- dynamic rule/3.
 :- dynamic signs/1.
+:- dynamic usedfact/2.
+
+% unset/1
+unset(N/A) :-
+    abolish(N,A).
+
+% unset_asked/1
+unset_asked(Y) :-
+    (asked(Y,_) -> retract(asked(Y,_)) ; true).
 
 % save_debug/1
 save_debug(X) :-
-    \+ debug(X),
-    retractall(debug(_)),
+    (debug(X) -> retract(debug(_))),
     assert(debug(X)),
     !.
-save_debug(X) :-
-    debug(X).
 
-% save_index/1
+% save_index/1 (-NextID)
+% Returns the next available ID
 save_index(NextID) :-
-    retractall(last_index(_)),
+    \+ last_index(_),
+    assert(last_index(NextID)),
+    !.
+save_index(NextID) :-
+    last_index(_),
+    retract(last_index(_)),
     assert(last_index(NextID)),
     !.
 
 % save_observation/2
 save_observation(X,Observation) :-
     save_fact(manifests(X,Observation),ID),
-    % log(manifests(X,Observation)),
     save_history(X,ID).
 
 % save_fact/2
@@ -57,19 +66,20 @@ save_history(X,ID) :-
 
 % save_usedfact/2
 save_usedfact(ID,Fact) :-
-    (fact(ID,Fact) -> retract(fact(ID,Fact)) ; true),
+    (fact(_,Fact) -> retract(fact(_,Fact)) ; true),
     assert(usedfact(ID,Fact)),
     !,
     (is_debug -> (writeln(usedfact(ID,Fact))) ; true).
 
-% save_rule/2
+% save_rule/3
 save_rule(ID,Head,Conditions) :-
     \+ rule(_,Head,Conditions),
     asserta(rule(ID,Head,Conditions)),
     !,
     (is_debug -> (writeln(rule(ID,Head,Conditions))) ; true).
 
-% save_trail/2 
+% save_trail/2 (+Prev,+Curr)
+% Stores Curr in the same fact_history as Prev.
 save_trail(Prev,Curr) :-
     \+ is_list(Curr),
     fact_history(X,History),
@@ -78,31 +88,41 @@ save_trail(Prev,Curr) :-
     assert(fact_history(X,[Curr|History])),
     !,
     (is_debug -> writeln(fact_history(X,[Curr|History])) ; true).
+% save_trail/2 (+Prev,+List)
+% Appends the elements of the list to Prev history.
 save_trail(Prev,[]).
 save_trail(Prev,[H|T]) :-
     save_trail(Prev,H),
     save_trail(Prev,T).
 
-% save_actuator/2
-save_actuator(Actuator,Status) :-
-    actuator_status(Actuator,_),
-    retractall(actuator_status(Actuator,_)),
+% actuator_init/1 (+Actuator)
+% Initializes the status.
+actuator_init(Actuator) :-
+    assert(actuator_status(Actuator,off)),
+    !.
+% actuator_save/3 (+Actuator,+Status,-Action)
+% Changes the status and returns the performed action.
+actuator_save(Actuator,Status,changed) :-
+    actuator_status(Actuator,OldStatus),
+    OldStatus \= Status,
+    retractall(actuator_status(Actuator,_)), 
     assert(actuator_status(Actuator,Status)),
     !.
-save_actuator(Actuator,Status) :-
-    \+ actuator_status(Actuator,_),
-    ground(Status),
-    assert(actuator_status(Actuator,Status)),
-    !.
-    % atomic_concat(['\t',ActuatorID,' turned ',Status],Message),
-    % log(Message),
-    % (is_debug -> writeln(actuator_status(ID,Status)) ; true).
+% actuator_save/3
+% If it's already in the right status does nothing.
+actuator_save(Actuator,Status,none) :-
+    actuator_status(Actuator,Status).
 
-% save_ln/1
-save_ln(X) :-
+% saveln/1
+saveln(X) :-
     \+ call(X),
     assert(X),
     !,
     (is_debug -> writeln(X) ; true).
-save_ln(X) :-
+saveln(X) :-
     call(X).
+
+% saveln_a/1
+saveln_a(X) :-
+    asserta(X),
+    !.

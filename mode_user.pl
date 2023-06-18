@@ -1,6 +1,3 @@
-:- use_module(library(lists)).
-:- use_module(library(apply_macros)).
-
 :- dynamic problem/1.
 :- dynamic issue/1.
 
@@ -8,7 +5,8 @@
 user_start :-
     symptomatology,
     forward,
-    user_diagnosis.
+    backward,
+    diagnosis.
 
 % symptomatology/0
 symptomatology :-
@@ -20,10 +18,10 @@ symptomatology :-
 % once_again/0
 once_again :- askif(new_symptom).
 
-% ask_symptom/0
+% build_symptom/0
 % Initializes the questioning for the user to provide informations about the manifested symptoms
 build_symptom :-
-    retractall(asked(new_symptom,_)),
+    unset_asked(new_symptom),
     ask_sign(Sign),
     ask_location(Sign,Location),
     ask_color(Sign,Color),
@@ -51,18 +49,3 @@ ask_color(Sign,Color) :-
 % ask_color (+Sign,-Color)
 ask_color(Sign,none) :-
     \+ sign_color(Sign,_).
-
-% user_diagnosis/0
-% No symptoms case
-user_diagnosis :-
-    not(usedfact(_,_)),
-    writeln_message(no_symptom).
-% If there are symptoms but there's no clear diagnosis
-user_diagnosis :-
-    usedfact(_,_),
-    not(usedfact(_,condition(_,_))),
-    writeln_message(no_condition).
-% If there are clear conditions,explains them
-user_diagnosis :-
-    usedfact(_,condition(_,_)),
-    diagnosis.

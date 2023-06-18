@@ -1,13 +1,15 @@
-:- use_module(library(system)).
-:- use_module(library(apply_macros)).
-:- use_module(library(ordsets)).
-
-:- dynamic asked/2.
-
 debug(off).
 
 % is_debug/0
 is_debug :- debug(on).
+
+% timer/2
+% Estimates the CPU time for evaluating a Goal.
+timer(Goal, Time) :-
+    statistics(runtime, [Start|_]),
+    Goal,
+    statistics(runtime, [End|_]),
+    Time is End - Start.
 
 % utils_init
 % Initializes the most frequently used lists to improve performances and improve tracing readeability
@@ -16,17 +18,19 @@ utils_init :-
     plants_init.
 
 % signs/0
+% Stores in the working memory a list of all signs for future samplings.
 signs_init :-
     all(Sign,sign_location(Sign,_),Signs),
     delete(Signs,'none',Signs1),
     list_to_ord_set(Signs1,Set),
-    save_ln(signs(Set)).
+    saveln(signs(Set)).
 
 % plants_init/0
+% Stores in the working memory a list of all plants for future samplings.
 plants_init :-
-    all(Plant,plant_sensor(Plant,_),Plants),
+    all(Plant,plant_sensor(Plant,_,_),Plants),
     list_to_ord_set(Plants,Set),
-    save_ln(plants(Set)).
+    saveln(plants(Set)).
 
 % history/0
 history :-
@@ -37,7 +41,8 @@ history :-
             reverse(H1,H2)),
         Hs),
     maplist(writeln,Hs).
-% history/1
+% history/1 (-Hs)
+% Returns the reversed plants' histories
 history(Hs) :-
     all([P|H2],
             (fact_history(P,H1),
@@ -46,9 +51,8 @@ history(Hs) :-
             reverse(H1,H2)),
         Hs).
 
-
-
-% Predicate to display a menu and get user's selection
+% ask_menu/2 (+Menu,-Selection)
+% Displays a menu and get user's selection
 ask_menu(Menu,Selection) :-
     write('Select an option:'),nl,
     display_menu(Menu,1),
@@ -56,6 +60,8 @@ ask_menu(Menu,Selection) :-
     read(Index),
     ask_menu_forward(Menu,Index,Selection).
 
+% ask_menu_forward/3 (+Menu,+Index,-Selection)
+% Returns Index's Selection.
 ask_menu_forward(Menu,Index,Selection) :-
     nth1(Index,Menu,Selection).
 ask_menu_forward(Menu,Index,Selection) :-
@@ -64,20 +70,22 @@ ask_menu_forward(Menu,Index,Selection) :-
     !,
     fail.
 
-% Helper predicate to display the menu options with their indices
+% display_menu/2(+List,+Index)
+% Helper predicate to display the menu options with their indexes
 display_menu([],_).
 display_menu([Option|Rest],Index) :-
     write(Index),write('. '),write(Option),nl,
     NewIndex is Index + 1,
     display_menu(Rest,NewIndex).
 
-% plant_history_id/1
+% plant_history_id/2(+P,-H1)
+% Returns the reversed plant's history
 plant_history_id(P,H1) :-
     fact_history(P,H),
-    % memberchk(ID,H),
     reverse(H,H1).
 
-% plant_history/3
+% plant_history/3 (+Plant,-History,-Facts)
+% Returns plant's history and facts
 plant_history(Plant,History,Facts) :-
     plant_history_id(Plant,History),
     all(X-Fact,(
@@ -85,13 +93,25 @@ plant_history(Plant,History,Facts) :-
         (usedfact(X,Fact) ; (rule(X,(Head),Body),Fact = Head-Body))
         ),Facts).
 
-% timestamp/1
-% Returns the current timestamp
-timestamp(T) :- 
-    datime(datime(Year,Month,Day,Hour,Minute,Second)),
-    T = timestamp(Year-Month-Day,Hour:Minute:Second).
+% timestamp_utc/1
+timestamp_utc(Now) :-
+    datime(datime(Year, Month, Day, Hour, Minute, Second)),
+    add_zero(Month, PaddedMonth),
+    add_zero(Day, PaddedDay),
+    add_zero(Hour, PaddedHour),
+    add_zero(Minute, PaddedMinute),
+    add_zero(Second, PaddedSecond),
+    atomic_list_concat([Year, PaddedMonth, PaddedDay], '-', Date),
+    atomic_list_concat([PaddedHour, PaddedMinute, PaddedSecond, 'Z'], ':', Time),
+    atomic_list_concat([Date, 'T', Time], DateTime),
+    format(atom(Now), '~w', [DateTime]).
+    
+% add_zero/2
+add_zero(N, Padded) :-
+    (N < 10 -> atomic_concat([0, N], Padded) ; Padded = N).
 
 % write_message/1 (+MessageCode)
+% Retrieves the string message from its code and prints it out.
 write_message(MessageCode) :-
     message_code(MessageCode,Message),
     write(Message).
@@ -120,7 +140,7 @@ askif(Q) :-
 ask(Qcode,A) :- asked(Qcode,A).
 ask(Qcode,A) :- \+ (asked(Qcode,A)),
     question_code(Qcode,Q),
-    write(Q),write('?'),nl,
+    write(Q),write('?\n'),
     read(A2),
     ask2(Q,Qcode,A2,A).
 
@@ -132,8 +152,7 @@ positive_answer(Qcode,A) :-
     message_code(yes_or_no,M),
     write(M),nl,
     read(A2),
-    retract(asked(Qcode,A)),
-    asserta(asked(Qcode,A2)),
+    saveln(asked(Qcode,A)),
     affirmative(A2).
 
 % askifnot/1
@@ -154,15 +173,7 @@ ask2(Q,Qcode,'?',A) :-
 
 ask2(Q,Qcode,A,A) :-
     \+ (A = '?'),
-    asserta(asked(Qcode,A)).
-
-% % explain/1
-% explain(X) :- 
-%     explanation(X,Y),
-%     writeln(Y).
-% explain(X) :-
-%     \+ explanation(X,Y),
-%     writeln_message(no_explanation).
+    saveln(asked(Qcode,A)).
 
 % affirmative/1
 affirmative(yes).

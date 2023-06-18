@@ -1,0 +1,16 @@
+2023-06-18T18:08:23:Z,p3,humidity,high,fan12,on
+2023-06-18T18:08:23:Z,p3,humidity,high,fan12,off
+2023-06-18T18:08:23:Z,spatafillo,temperature,low,fan13,on
+2023-06-18T18:08:23:Z,spatafillo,temperature,low,fan13,off
+2023-06-18T18:08:26:Z,spatafillo,temperature,high,fan13,on
+2023-06-18T18:08:26:Z,spatafillo,temperature,high,fan13,off
+2023-06-18T18:08:23:Z,sunflower,humidity,high,fan8,on
+2023-06-18T18:08:23:Z,sunflower,humidity,high,sprinkler7,on
+2023-06-18T18:08:23:Z,sunflower,humidity,high,fan8,off
+2023-06-18T18:08:26:Z,sunflower,humidity,low,sprinkler7,off
+2023-06-18T18:08:26:Z,sunflower,humidity,low,fan8,on
+2023-06-18T18:08:26:Z,sunflower,humidity,low,sprinkler7,on
+2023-06-18T18:08:26:Z,sunflower,humidity,low,fan8,off
+2023-06-18T18:08:23:Z,trinidad1,humidity,high,fan4,on
+2023-06-18T18:08:23:Z,trinidad1,humidity,high,sprinkler3,on
+2023-06-18T18:08:23:Z,trinidad1,humidity,high,fan4,off

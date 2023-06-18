@@ -129,42 +129,42 @@ rule(126,condition(X,'wet'),[manifests(X,reading(humidity,high))]).
 rule(127,condition(X,'dry'),[manifests(X,reading(humidity,low))]).
 rule(128,condition(X,'hot'),[manifests(X,reading(temperature,high))]).
 rule(129,condition(X,'cold'),[manifests(X,reading(temperature,low))]).
-problem('climate') :- condition('wet').
-problem('climate') :- condition('dry').
-problem('climate') :- condition('hot').
-problem('climate') :- condition('cold').
-problem('infestation') :- condition('apthids').
-problem('infestation') :- condition('thrips').
-problem('infestation') :- condition('spider mites').
-problem('infestation') :- condition('scale insects').
-problem('infestation') :- condition('white flies').
-problem('infestation') :- condition('cutworms').
-problem('infestation') :- condition('fungus gnats').
-problem('infestation') :- condition('mealy bugs').
-problem('disease') :- condition('black spot').
-problem('disease') :- condition('leaf spot').
-problem('disease') :- condition('powdery mildew').
-problem('disease') :- condition('downy mildew').
-problem('disease') :- condition('blight').
-problem('disease') :- condition('canker').
-problem('disease') :- condition('shot hole').
-problem('disease') :- condition('early blight').
-problem('disease') :- condition('late blight').
-problem('disease') :- condition('grey mold').
-problem('disease') :- condition('verticilium wilt').
-problem('nutrient deficiency') :- condition('nitrogen').
-problem('nutrient deficiency') :- condition('phosphorus').
-problem('nutrient deficiency') :- condition('potassium').
-problem('nutrient deficiency') :- condition('sulfur').
-problem('nutrient deficiency') :- condition('magnesium').
-problem('nutrient deficiency') :- condition('calcium').
-problem('nutrient deficiency') :- condition('boron').
-problem('nutrient deficiency') :- condition('chloride').
-problem('nutrient deficiency') :- condition('copper').
-problem('nutrient deficiency') :- condition('iron').
-problem('nutrient deficiency') :- condition('manganese').
-problem('nutrient deficiency') :- condition('zinc').
-issue('abiotic') :- problem('climate').
-issue('abiotic') :- problem('nutrient deficiency').
-issue('biotic') :- problem('infestation').
-issue('biotic') :- problem('disease').
+rule(130,problem(X,'climate'),[condition(X,'wet')]).
+rule(131,problem(X,'climate'),[condition(X,'dry')]).
+rule(132,problem(X,'climate'),[condition(X,'hot')]).
+rule(133,problem(X,'climate'),[condition(X,'cold')]).
+rule(134,problem(X,'infestation'),[condition(X,'apthids')]).
+rule(135,problem(X,'infestation'),[condition(X,'thrips')]).
+rule(136,problem(X,'infestation'),[condition(X,'spider mites')]).
+rule(137,problem(X,'infestation'),[condition(X,'scale insects')]).
+rule(138,problem(X,'infestation'),[condition(X,'white flies')]).
+rule(139,problem(X,'infestation'),[condition(X,'cutworms')]).
+rule(140,problem(X,'infestation'),[condition(X,'fungus gnats')]).
+rule(141,problem(X,'infestation'),[condition(X,'mealy bugs')]).
+rule(142,problem(X,'disease'),[condition(X,'black spot')]).
+rule(143,problem(X,'disease'),[condition(X,'leaf spot')]).
+rule(144,problem(X,'disease'),[condition(X,'powdery mildew')]).
+rule(145,problem(X,'disease'),[condition(X,'downy mildew')]).
+rule(146,problem(X,'disease'),[condition(X,'blight')]).
+rule(147,problem(X,'disease'),[condition(X,'canker')]).
+rule(148,problem(X,'disease'),[condition(X,'shot hole')]).
+rule(149,problem(X,'disease'),[condition(X,'early blight')]).
+rule(150,problem(X,'disease'),[condition(X,'late blight')]).
+rule(151,problem(X,'disease'),[condition(X,'grey mold')]).
+rule(152,problem(X,'disease'),[condition(X,'verticilium wilt')]).
+rule(153,problem(X,'nutrient deficiency'),[condition(X,'nitrogen')]).
+rule(154,problem(X,'nutrient deficiency'),[condition(X,'phosphorus')]).
+rule(155,problem(X,'nutrient deficiency'),[condition(X,'potassium')]).
+rule(156,problem(X,'nutrient deficiency'),[condition(X,'sulfur')]).
+rule(157,problem(X,'nutrient deficiency'),[condition(X,'magnesium')]).
+rule(158,problem(X,'nutrient deficiency'),[condition(X,'calcium')]).
+rule(159,problem(X,'nutrient deficiency'),[condition(X,'boron')]).
+rule(160,problem(X,'nutrient deficiency'),[condition(X,'chloride')]).
+rule(161,problem(X,'nutrient deficiency'),[condition(X,'copper')]).
+rule(162,problem(X,'nutrient deficiency'),[condition(X,'iron')]).
+rule(163,problem(X,'nutrient deficiency'),[condition(X,'manganese')]).
+rule(164,problem(X,'nutrient deficiency'),[condition(X,'zinc')]).
+rule(165,issue(X,'abiotic'),[problem(X,'climate')]).
+rule(166,issue(X,'abiotic'),[problem(X,'nutrient deficiency')]).
+rule(167,issue(X,'biotic'),[problem(X,'infestation')]).
+rule(168,issue(X,'biotic'),[problem(X,'disease')]).
