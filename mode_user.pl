@@ -35,17 +35,17 @@ build_symptom :-
 % ask_sign/1 (-Sign)
 ask_sign(Sign) :-
     signs(Signs),
-    ask_menu(Signs,Sign).
+    ask_menu(signs,Signs,Sign).
 % ask_location/2 (+Sign,-Location)
 ask_location(Sign,Location) :-
     all(Location,sign_location(Sign,Location),Locations),
     length(Locations,L),
-    (L > 1 -> ask_menu(Locations,Location) ; nth1(1,Locations,Location)).
+    (L > 1 -> ask_menu(sign_locations,Locations,Location) ; nth1(1,Locations,Location)).
 % ask_color (+Sign,-Color)
 ask_color(Sign,Color) :-
     all(Color,sign_color(Sign,Color),Colors),
     length(Colors,L),
-    (L > 1 -> ask_menu(Colors,Color) ; nth1(1,Colors,Color)).
+    (L > 1 -> ask_menu(sign_colors,Colors,Color) ; nth1(1,Colors,Color)).
 % ask_color (+Sign,-Color)
 ask_color(Sign,none) :-
     \+ sign_color(Sign,_).

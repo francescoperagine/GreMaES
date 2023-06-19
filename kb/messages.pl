@@ -1,52 +1,51 @@
 % welcome/1
 welcome :-
-    writeln('Welcome to GreMaES  - the Greehouse Management Expert System made by Francesco Peragine.'),
-    writeln('You can submit the symptoms manifested on your plants to get a diagnosis,browse the Knowledge Base or start the monitor mode.'),
-    writeln('If there are any,the software will provide both diagnosis and suggestions about the treatment.'),
-    writeln('Ethics & Privacy: no plants were harmed during the tests and no personal informations will be stored nor disclosed.'),nl.
+    writeln('*******************************************************************************************************'),
+    writeln('\nWelcome to GreMaES  - the Greehouse Management Expert System developed by Francesco Peragine.\n'),
+    writeln('You can interact with the ES in the \'user mode\', start the monitor mode or consult the knowledge base.'),
+    writeln('The software will provide diagnosis and suggestions about the treatment, if any.\n'),
+    writeln('Ethics & Privacy: no plants were harmed during develompent and tests phases (but few died of old age).'),
+    writeln('No personal informations will be stored nor disclosed.\n'),
+    writeln('*******************************************************************************************************').
 
 welcome_monitor :-
-    writeln('This is the GreMaES monitor mode.'),
-    writeln('To check out the functionalities of the system,some devices\' readings sampling will be randomly generated.'),
-    writeln('\nPlants hosted in the virtual greenhouse:'),nl.
+    writeln('*******************************************************************************************************'),
+    writeln('\nWelcome to GreMaES - Monitor mode.\n'),
+    writeln('The system will now perform random samplings from few simulated sensors.'),
+    writeln('To smoothe and speed up the process the sampling size is fixed to 10 and the interval is set to 0.\n'),
+    writeln('*******************************************************************************************************'),
+    writeln('\nPlants hosted in the virtual greenhouse:\n').
 
 goodbye :-
     nl,writeln('Thank you for using GreMaES - the Greehouse Management Expert System.'),
     writeln('See you next time. FP.').
 
-question_code(fruition_mode(mode_user),'Do you want to perform a diagnostic evaluation of the health status of a plant').
-% explanation(fruition_mode(mode_user),'Provide the symptoms that the plant exibits to understand if it\'s affected by any problem and to get eventual treatment instructions').
-question_code(fruition_mode(mode_kb),'Do you want to explore the Knowledge Base').
-% explanation(fruition_mode(mode_kb),'Shows all the informations about health problems,symptoms,treatments').
-question_code(fruition_mode(mode_monitor),'Do you want to start the monitor mode').
-% explanation(fruition_mode(mode_monitor),'Simulates the use of devices to test the automations of the system').
-question_code(debug_mode,'Do you want to proceed with debug mode').
+question_code(fruition_mode(mode_user),'\nDo you want to perform a diagnostic evaluation of the health status of a plant').
+explanation(fruition_mode(mode_user),'\nProvide the symptoms that the plant exibits to understand if it\'s affected by any problem and to get eventual treatment instructions.\n').
+question_code(fruition_mode(mode_monitor),'\nDo you want to start the monitor mode').
+explanation(fruition_mode(mode_monitor),'\nSimulates the use of devices to test the automations of the system.\n').
+question_code(fruition_mode(mode_kb),'\nDo you want to explore the Knowledge Base').
+explanation(fruition_mode(mode_kb),'\nShows all the informations about health problems,symptoms,treatments.\n').
+
 question_code(start_again,'\nWould you like to run the program again').
-question_code(new_symptom,'Would you like to register a new symptom').
-question_code(continue_monitor_loop,'Do you want to continue the sampling').
+question_code(new_symptom,'\nWould you like to register a new symptom').
+question_code(continue_monitor_loop,'\nDo you want to continue the sampling').
 question_code(need_explanation,'\nDo you want to check how the inference went by').
 
-question_code(view(X),X) :- write('Would you like to browse the ').
-question_code(has(X),X) :- write('Does it have a particular ').
-question_code(what(X),X) :- write('What ').
+question_code(view(X),X) :- write('\nWould you like to browse the ').
 
-message_code(stop_selection,'Stop by user selection.').
 message_code(not_recognized_value,'The selected value was not recognized. Try again.').
 message_code(yes_or_no,'Please answer yes or no.').
 message_code(no_condition,'There is no condition to treat.').
 message_code(no_explanation,'There is no explanation for this.').
+message_code(preserve_environment,'Preserve the plant\'s environment accordingly to its needs.').
+message_code(inference,'\nReasoning performed by the forward engine (ID-Inference step):\n').
 message_code(no_symptom,'There are no observed symptoms.').
-message_code(no_actuators,'There are no connected actuators for plant ').
-message_code(no_plant_actuator,'There are no suitable actuators for ').
-message_code(sign_locations,'Which location is affected by the problem?').
-message_code(signs,'How is the problem manifested?').
-message_code(sign_colors,'What color does it have?').
-message_code(because_of,'\nBecause of ').
-message_code(diagnosis_of,' the diagnosis is of ').
-message_code(due_from,',could be due from ').
-message_code(option_selected,'You have selected option n.').
+
+message_code(signs,'\nHow is the problem manifested?\n').
+message_code(sign_locations,'\nWhich location is affected by the problem?\n').
+message_code(sign_colors,'\nWhat color does it have?\n').
+
 message_code(missing_nutrient,'Treatment: provide the missing nutrient to the plant.').
 message_code(treatment,'* Treatment: ').
 message_code(treatment_none,'* There are no treatments for ').
-
-message_code(no_type_actuator,'There is no actuator for that type').

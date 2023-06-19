@@ -25,7 +25,7 @@ diagnosis_forward :-
 % explain_inference/1 (+Facts)
 explain_inference(Facts) :-
     need_explanation,
-    writeln('\nReasoning performed by the forward engine (ID-Inference step):\n'),
+    writeln_message(inference),
     maplist(writeln,Facts).
 explain_inference(_) :-
     \+ need_explanation.
@@ -45,23 +45,24 @@ explain_diagnosis(Plant-Condition) :-
     rule(_,problem(_,Problem),[condition(_,Condition)]),
     rule(_,issue(_,Issue),[problem(_,Problem)]),
     usedfact(_,issue(Plant,Issue)),
-    (mode_user -> X = 'Your plant'; X = Plant),
+    (mode_user -> X = '\nYour plant'; X = Plant),
     atomic_concat([X,' is affected by the ',Issue,' disorder - ',Condition,' ',Problem], Message),
     writeln(Message).
 
 % explain_treatment/1 (+Condition)
 explain_treatment(Condition) :-
-    clause(problem('climate'),condition(Condition)),
-    writeln('Preserve the plant\'s environment accordingly to its needs.').
+    rule(_,problem(_,'climate'),[condition(_,Condition)]),
+    writeln_message(preserve_environment).
 explain_treatment(Condition) :-
-    problem_condition('nutrient deficiency',Condition),
+    rule(_,problem(_,'nutrient deficiency'),[condition(_,Condition)]),
     writeln_message(missing_nutrient).
 explain_treatment(Condition) :-
-    \+ problem_condition('nutrient deficiency',Condition),
+    \+ rule(_,problem(_,'climate'),[condition(_,Condition)]),
+    \+ rule(_,problem(_,'nutrient deficiency'),[condition(_,Condition)]),
     \+ treatment(Condition,_),
     write_message(treatment_none), writeln(Condition).
 explain_treatment(Condition) :-
-    \+ problem_condition('nutrient deficiency',Condition),
+    \+ rule(_,problem(_,'nutrient deficiency'),[condition(_,Condition)]),
     all(Treatment,treatment(Condition,Treatment),Treatments),
     write('* How to treat '),write(': '),
     maplist(writeln,Treatments).

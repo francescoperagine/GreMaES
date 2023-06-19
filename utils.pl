@@ -51,32 +51,6 @@ history(Hs) :-
             reverse(H1,H2)),
         Hs).
 
-% ask_menu/2 (+Menu,-Selection)
-% Displays a menu and get user's selection
-ask_menu(Menu,Selection) :-
-    write('Select an option:'),nl,
-    display_menu(Menu,1),
-    repeat,
-    read(Index),
-    ask_menu_forward(Menu,Index,Selection).
-
-% ask_menu_forward/3 (+Menu,+Index,-Selection)
-% Returns Index's Selection.
-ask_menu_forward(Menu,Index,Selection) :-
-    nth1(Index,Menu,Selection).
-ask_menu_forward(Menu,Index,Selection) :-
-    \+ nth1(Index,Menu,Selection),
-    writeln_message(not_recognized_value),
-    !,
-    fail.
-
-% display_menu/2(+List,+Index)
-% Helper predicate to display the menu options with their indexes
-display_menu([],_).
-display_menu([Option|Rest],Index) :-
-    write(Index),write('. '),write(Option),nl,
-    NewIndex is Index + 1,
-    display_menu(Rest,NewIndex).
 
 % plant_history_id/2(+P,-H1)
 % Returns the reversed plant's history
@@ -131,6 +105,33 @@ match([X|L1], L2) :-
     member(X, L2),
     match(L1, L2).
 
+% ask_menu/3 (+MessageCode,+Menu,-Selection)
+% Displays a menu and get user's selection
+ask_menu(MessageCode,Menu,Selection) :-
+    writeln_message(MessageCode),
+    display_menu(Menu,1),
+    repeat,
+    read(Index),
+    ask_menu_forward(Menu,Index,Selection).
+
+% ask_menu_forward/3 (+Menu,+Index,-Selection)
+% Returns Index's Selection.
+ask_menu_forward(Menu,Index,Selection) :-
+    nth1(Index,Menu,Selection).
+ask_menu_forward(Menu,Index,Selection) :-
+    \+ nth1(Index,Menu,Selection),
+    writeln_message(not_recognized_value),
+    !,
+    fail.
+
+% display_menu/2(+List,+Index)
+% Helper predicate to display the menu options with their indexes
+display_menu([],_).
+display_menu([Option|Rest],Index) :-
+    write(Index),write('. '),write(Option),nl,
+    NewIndex is Index + 1,
+    display_menu(Rest,NewIndex).
+
 % askif/1
 askif(Q) :-
     ask(Q,A),
@@ -174,6 +175,14 @@ ask2(Q,Qcode,'?',A) :-
 ask2(Q,Qcode,A,A) :-
     \+ (A = '?'),
     saveln(asked(Qcode,A)).
+
+% explain/1
+explain(X) :- 
+    explanation(X,Y),
+    writeln(Y).
+explain(X) :-
+    \+ explanation(X,Y),
+    writeln_message(no_explanation).
 
 % affirmative/1
 affirmative(yes).
