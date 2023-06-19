@@ -1,4 +1,4 @@
-% plant/3 Plant,species,humidity stage.
+% plant/3 (Plant,Species,GrowthStage)
 plant(trinidad1,capsicum_chinense,greenhouse).
 plant(sunflower,helianthus_annuus,flowering_mature).
 plant(p1,phalaenopsis,orchid_growth_development).

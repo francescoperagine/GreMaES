@@ -32,7 +32,8 @@ cleanup :-
     unset(fact_history/2),
     unset(fact/2),
     unset(usedfact/2),
-    unset(actuator_status/2).
+    unset(actuator_status/2),
+    unset(observation/6).
 
 % fruition_mode/0
 fruition_mode :- 

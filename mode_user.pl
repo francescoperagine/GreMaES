@@ -49,3 +49,30 @@ ask_color(Sign,Color) :-
 % ask_color (+Sign,-Color)
 ask_color(Sign,none) :-
     \+ sign_color(Sign,_).
+
+% ask_menu/3 (+MessageCode,+Menu,-Selection)
+% Displays a menu and get user's selection
+ask_menu(MessageCode,Menu,Selection) :-
+    writeln_message(MessageCode),
+    display_menu(Menu,1),
+    repeat,
+    read(Index),
+    ask_menu_forward(Menu,Index,Selection).
+
+% ask_menu_forward/3 (+Menu,+Index,-Selection)
+% Returns Index's Selection.
+ask_menu_forward(Menu,Index,Selection) :-
+    nth1(Index,Menu,Selection).
+ask_menu_forward(Menu,Index,Selection) :-
+    \+ nth1(Index,Menu,Selection),
+    writeln_message(not_recognized_value),
+    !,
+    fail.
+
+% display_menu/2(+List,+Index)
+% Helper predicate to display the menu options with their indexes
+display_menu([],_).
+display_menu([Option|Rest],Index) :-
+    write(Index),write('. '),write(Option),nl,
+    NewIndex is Index + 1,
+    display_menu(Rest,NewIndex).

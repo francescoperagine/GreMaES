@@ -105,33 +105,6 @@ match([X|L1], L2) :-
     member(X, L2),
     match(L1, L2).
 
-% ask_menu/3 (+MessageCode,+Menu,-Selection)
-% Displays a menu and get user's selection
-ask_menu(MessageCode,Menu,Selection) :-
-    writeln_message(MessageCode),
-    display_menu(Menu,1),
-    repeat,
-    read(Index),
-    ask_menu_forward(Menu,Index,Selection).
-
-% ask_menu_forward/3 (+Menu,+Index,-Selection)
-% Returns Index's Selection.
-ask_menu_forward(Menu,Index,Selection) :-
-    nth1(Index,Menu,Selection).
-ask_menu_forward(Menu,Index,Selection) :-
-    \+ nth1(Index,Menu,Selection),
-    writeln_message(not_recognized_value),
-    !,
-    fail.
-
-% display_menu/2(+List,+Index)
-% Helper predicate to display the menu options with their indexes
-display_menu([],_).
-display_menu([Option|Rest],Index) :-
-    write(Index),write('. '),write(Option),nl,
-    NewIndex is Index + 1,
-    display_menu(Rest,NewIndex).
-
 % askif/1
 askif(Q) :-
     ask(Q,A),
@@ -155,9 +128,6 @@ positive_answer(Qcode,A) :-
     read(A2),
     saveln(asked(Qcode,A)),
     affirmative(A2).
-
-% askifnot/1
-askifnot(Q) :- not(askif(Q)).
 
 % ask/2
 ask(Qcode,A) :- asked(Qcode,A).

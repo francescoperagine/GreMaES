@@ -1,3 +1,4 @@
+% treatment/2 (Condition,Treatment)
 treatment('black spot','plant in well-draining soil. Provide regular feedings of organic fertilizer. Remove dead leaves and infected canes and do not add them to the compost pile. Avoid applying water on the leaves,as it spreads the fungal spores.').
 treatment('leaf spot','plant in well-draining soil. Provide regular feedings of organic fertilizer. Remove dead leaves and infected canes and do not add them to the compost pile. Avoid applying water on the leaves,as it spreads the fungal spores.').
 treatment('powdery mildew','trim and remove infected parts. Do not till the debris into the soil or use in compost pile. Space plants far enough apart to increase air circulation and reduce humidity').

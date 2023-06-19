@@ -42,8 +42,8 @@ message_code(preserve_environment,'Preserve the plant\'s environment accordingly
 message_code(inference,'\nReasoning performed by the forward engine (ID-Inference step):\n').
 message_code(no_symptom,'There are no observed symptoms.').
 
-message_code(signs,'\nHow is the problem manifested?\n').
-message_code(sign_locations,'\nWhich location is affected by the problem?\n').
+message_code(signs,'\nHow is the symptom manifested?\n').
+message_code(sign_locations,'\nWhich location is affected by the symptom?\n').
 message_code(sign_colors,'\nWhat color does it have?\n').
 
 message_code(missing_nutrient,'Treatment: provide the missing nutrient to the plant.').

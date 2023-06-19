@@ -1,5 +1,4 @@
-% (?<=symptom\()([^,]+),([^,)]+),([^)]+) -> '$1','$2','$3'
-
+% rule/3 (Id,Head,Conditions)
 rule(1,condition(X,'nitrogen'),[manifests(X,symptom('lower leaves','altered color','chlorotic'))]).
 rule(2,condition(X,'nitrogen'),[manifests(X,symptom('leaves','early fall','none'))]).
 rule(3,condition(X,'nitrogen'),[manifests(X,symptom('roots','increased growth','none'))]).

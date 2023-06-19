@@ -50,7 +50,6 @@ monitor_start :-
 
 % monitor_cleanup/0
 monitor_cleanup :-
-    % unset(plant_status),
     unset(observation/6),
     unset(sensors/1).
     unset(actuator_status/2).
@@ -244,7 +243,7 @@ actuator_start((Timestamp,Plant,ActuatorID,Metric,Condition,Reading,ActivationSt
     actuator_save(ActuatorID,off,Action),
     (Action \= none -> actuator_log(Timestamp,Plant,Metric,Reading,ActuatorID,off) ; true).
 
-% actuator_log/6
+% actuator_log/6 (Timestamp,Plant,Metric,Reading,ActuatorID,Status)
 actuator_log(Timestamp,Plant,Metric,Reading,ActuatorID,Status) :-
     atomic_concat([Timestamp,',',Plant,',',Metric,',',Reading,',',ActuatorID,',',Status], Message),
     log(actuator,Message).

@@ -1,6 +1,4 @@
-% (sign_location|sign_color)\(([^,]+),([^)]+)\) ->
-
-% sign_location/2
+% sign_location/2 (Sign,Location)
 sign_location('none','all').
 sign_location('altered color','all').
 sign_location('altered color','branches').
@@ -74,7 +72,7 @@ sign_location('wilting margins','leaves').
 sign_location('withering','all').
 sign_location('withering','leaves').
 
-% sign_color/2
+% sign_color/2 (Sign,Color)
 sign_color('altered color','chlorotic').
 sign_color('altered color','dark green').
 sign_color('altered color','blotchy chlorosis').

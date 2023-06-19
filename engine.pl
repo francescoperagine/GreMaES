@@ -53,14 +53,13 @@ pursuit(FactID,Fact) :-
     functor(Head,condition,_),
     rule_pursuit(FactID,Fact,RuleID,Head,Conditions),
     fail.
+    
 % rule_pursuit/5 (+FactID,+Fact,+RuleID,+Head,+Conditions)
 % Searches through rules conditions,deleting entries that match the fact F
 rule_pursuit(FactID,Fact,RuleID,Head,Conditions) :-
     match(Fact,Conditions),
     delete_fact(Fact,Conditions,ConditionsNew),
     new_rule(FactID,RuleID,Head,ConditionsNew).
-% rule_pursuit(FactID,Fact,RuleID,Head,Conditions) :-
-%     \+ functor(Conditions,condition,_), !.
 
 % delete_fact/3 (+X,+List,-Rest)
 % Unifies the fact by binding the variable within the conditions and it always succedees

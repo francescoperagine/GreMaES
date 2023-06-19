@@ -1,4 +1,4 @@
-% plant_sensor/3 - plant,sensorID,metric
+% plant_sensor/3 (Plant,SensorID,Metric)
 plant_sensor(trinidad1,t11,temperature).
 plant_sensor(sunflower,t12,temperature).
 plant_sensor(p1,t13,temperature).
@@ -22,7 +22,7 @@ plant_sensor(p3,c15,caption).
 plant_sensor(p4,c16,caption).
 plant_sensor(spatafillo,c17,caption).
 
-% plant_actuator/4 - plant,actuatorID,metric,usage,type
+% plant_actuator/4 (Plant,ActuatorID,Metric,Activation)
 plant_actuator(trinidad1,thermostat1,temperature,cold).
 plant_actuator(trinidad1,fan2,temperature,hot).
 plant_actuator(trinidad1,sprinkler3,humidity,dry).
