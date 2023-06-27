@@ -26,7 +26,7 @@ backward(Fact) :-
     backward(Condition),
     \+ usedfact(_,Fact),
     next_index(FactID),
-    saveln_a(usedfact(FactID,Fact)),
+    saveln(usedfact(FactID,Fact)),
     Fact =.. [_,X,_],
     save_history(X,RuleID),
     save_history(X,FactID).
@@ -70,11 +70,12 @@ delete_fact(X,[Y|L],[Y|M]) :-
     delete_fact(X,L,M).
 
 % new_rule/4 (+FactID,+RuleID,+Head,+List)
-% When the right-hand sided of a rule is empty a new fact is made,otherwise the rule is updated.
+% When the right-hand sided of a rule is empty a new fact is made,otherwise a new updated rule is made.
 new_rule(FactID,RuleID,Head,[]) :-
     save_fact(Head,FactIDNew),
     save_trail(FactID,[RuleID,FactIDNew]).
-new_rule(FactID,RuleID,Head,Conditions) :-
+% (+FactID,-RuleID,+Head,+List)
+new_rule(FactID,_,Head,Conditions) :-
     not(Conditions=[]),
     save_rule(RuleID,Head,Conditions),
     save_trail(FactID,RuleID).

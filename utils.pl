@@ -67,7 +67,9 @@ format_history(ID,Log) :-
     usedfact(ID,Log).
 format_history(ID,Log) :-
     rule(ID,Head,Body),
-    Log = Head-Body.
+    Body =.. L1,
+    append([Head,L1],L2),
+    Log =.. L2.
 
 % timestamp_utc/1
 timestamp_utc(Now) :-

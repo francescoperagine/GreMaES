@@ -48,6 +48,24 @@ save_fact(Fact,ID):-
     (is_debug -> writeln(fact(ID,Fact)) ; true).
 save_fact(_,_).
 
+% asserta forces the focus-of-attention on new facts,
+% therefore last found facts will be pursued first.
+
+% save_usedfact/2 (+ID,+Fact)
+save_usedfact(ID,Fact) :-
+    (fact(FactID,Fact) -> retract(fact(FactID,Fact)) ; true),
+    asserta(usedfact(ID,Fact)),
+    !,
+    (is_debug -> (writeln(usedfact(ID,Fact))) ; true).
+
+% save_rule/3 (-ID,+Head,+Conditions)
+save_rule(ID,Head,Conditions) :-
+    \+ rule(_,Head,Conditions),
+    next_index(ID),
+    asserta(rule(ID,Head,Conditions)),
+    !,
+    (is_debug -> (writeln(rule(ID,Head,Conditions))) ; true).
+
 % save_history/2
 save_history(X,ID) :-
     \+ fact_history(X,_),
@@ -60,24 +78,7 @@ save_history(X,ID) :-
     assert(fact_history(X,[ID|History])),
     !,
     (is_debug -> writeln(fact_history(X,[ID|History])) ; true).
-
-% asserta forces the focus-of-attention on new facts,
-% therefore last found facts will be pursued first.
-
-% save_usedfact/2
-save_usedfact(ID,Fact) :-
-    (fact(_,Fact) -> retract(fact(_,Fact)) ; true),
-    asserta(usedfact(ID,Fact)),
-    !,
-    (is_debug -> (writeln(usedfact(ID,Fact))) ; true).
-
-% save_rule/3
-save_rule(ID,Head,Conditions) :-
-    \+ rule(_,Head,Conditions),
-    asserta(rule(ID,Head,Conditions)),
-    !,
-    (is_debug -> (writeln(rule(ID,Head,Conditions))) ; true).
-
+    
 % save_trail/2 (+Prev,+Curr)
 % Stores Curr in the same fact_history as Prev.
 save_trail(Prev,Curr) :-
@@ -121,8 +122,3 @@ saveln(X) :-
     (is_debug -> writeln(X) ; true).
 saveln(X) :-
     call(X).
-
-% saveln_a/1
-saveln_a(X) :-
-    asserta(X),
-    !.
