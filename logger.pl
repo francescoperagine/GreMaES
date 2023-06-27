@@ -9,6 +9,7 @@ logger_init :-
 % log/2
 log(X,Message) :-
     log_file(X,File),
+    (\+ exists_directory(logs) -> make_directory('logs') ; true),
     open(File,append,Stream),
     write(Stream,Message),
     nl(Stream),
