@@ -67,7 +67,7 @@ save_history(X,ID) :-
 % save_usedfact/2
 save_usedfact(ID,Fact) :-
     (fact(_,Fact) -> retract(fact(_,Fact)) ; true),
-    assert(usedfact(ID,Fact)),
+    asserta(usedfact(ID,Fact)),
     !,
     (is_debug -> (writeln(usedfact(ID,Fact))) ; true).
 

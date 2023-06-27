@@ -17,10 +17,10 @@ diagnosis :-
 diagnosis_forward :-
     history(HistoriesList),
     (member([Plant|History],HistoriesList),
-    plant_history(Plant,History,Facts),
+    (plant_history(Plant,History,Facts),
     all(Plant-Condition,(member(ID,History), usedfact(ID,condition(Plant,Condition))),PlantsConditions),
     explain(PlantsConditions),
-    explain_inference(Facts)).
+    explain_inference(Facts))).
 
 % explain_inference/1 (+Facts)
 explain_inference(Facts) :-

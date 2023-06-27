@@ -51,7 +51,6 @@ history(Hs) :-
             reverse(H1,H2)),
         Hs).
 
-
 % plant_history_id/2(+P,-H1)
 % Returns the reversed plant's history
 plant_history_id(P,H1) :-
@@ -60,12 +59,15 @@ plant_history_id(P,H1) :-
 
 % plant_history/3 (+Plant,-History,-Facts)
 % Returns plant's history and facts
-plant_history(Plant,History,Facts) :-
+plant_history(Plant,History,Logs) :-
     plant_history_id(Plant,History),
-    all(X-Fact,(
-        member(X,History),
-        (usedfact(X,Fact) ; (rule(X,(Head),Body),Fact = Head-Body))
-        ),Facts).
+    all(X-Log,(member(X,History), format_history(X,Log)), Logs).
+
+format_history(ID,Log) :-
+    usedfact(ID,Log).
+format_history(ID,Log) :-
+    rule(ID,Head,Body),
+    Log = Head-Body.
 
 % timestamp_utc/1
 timestamp_utc(Now) :-
